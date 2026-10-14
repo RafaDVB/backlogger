@@ -10,6 +10,7 @@ export interface GameSummary {
   shelfSlot: number | null;
   coverPath: string | null;
   featuredPath: string | null;
+  screenshotPaths: string[];
 }
 
 export interface Rating { id: number; label: string; sortOrder: number; color: string | null }

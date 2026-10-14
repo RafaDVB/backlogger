@@ -1,25 +1,43 @@
 <script setup lang="ts">
-import { useDebugStore } from "./stores/debug";
-
-const debug = useDebugStore();
+import LibraryView from "./views/LibraryView.vue";
 </script>
 
 <template>
-  <main class="container">
-    <h1>Backlogger</h1>
-    <button @click="debug.ping('hello from Vue')">Ping Rust</button>
-    <p>{{ debug.reply }}</p>
-
-    <button @click="debug.seedAndLoad()">Seed and load games</button>
-    <p v-if="debug.error">{{ debug.error }}</p>
-    <ul>
-      <li v-for="game in debug.games" :key="game.id">
-        {{ game.title }} ({{ game.releaseYear }}) · {{ game.status }}
-        <span v-if="game.shelfSlot"> · slot {{ game.shelfSlot }}</span>
-      </li>
-    </ul>
-  </main>
+  <div class="app">
+    <aside class="shelf">
+      <h2>Now playing</h2>
+      <p class="hint">The six shelf slots arrive in slice 3.</p>
+    </aside>
+    <main class="main">
+      <LibraryView />
+    </main>
+  </div>
 </template>
 
-<style scoped>
+<style>
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+body {
+  margin: 0;
+}
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 100vh;
+}
+.shelf {
+  padding: 16px;
+  border-right: 1px solid rgba(128, 128, 128, 0.3);
+  overflow-y: auto;
+}
+.main {
+  padding: 16px;
+  overflow-y: auto;
+}
+.hint {
+  opacity: 0.6;
+  font-size: 14px;
+}
 </style>

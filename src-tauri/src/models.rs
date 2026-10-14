@@ -61,6 +61,7 @@ pub struct GameSummary {
     pub shelf_slot: Option<i64>,
     pub cover_path: Option<String>,
     pub featured_path: Option<String>,
+    pub screenshot_paths: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]

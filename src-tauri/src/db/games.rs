@@ -1,6 +1,7 @@
 use crate::error::{AppError, AppResult};
 use crate::models::*;
 use rusqlite::{Connection, OptionalExtension};
+use std::collections::HashMap;
 
 pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary>> {
     let mut stmt = conn.prepare(
@@ -24,9 +25,24 @@ pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary
             shelf_slot: row.get(5)?,
             cover_path: row.get(6)?,
             featured_path: row.get(7)?,
+            screenshot_paths: Vec::new(),
         })
     })?;
-    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    let mut games = rows.collect::<Result<Vec<_>, _>>()?;
+    let mut shots: HashMap<i64, Vec<String>> = HashMap::new();
+    let mut stmt =
+        conn.prepare("SELECT game_id, path FROM screenshots ORDER BY game_id, sort_order, id")?;
+    let pairs = stmt.query_map([], |row| {
+        Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+    })?;
+    for pair in pairs {
+        let (game_id, path) = pair?;
+        shots.entry(game_id).or_default().push(path);
+    }
+    for game in &mut games {
+        game.screenshot_paths = shots.remove(&game.id).unwrap_or_default();
+    }
+    Ok(games)
 }
 
 pub fn get(conn: &Connection, id: i64) -> AppResult<GameDetail> {
@@ -83,7 +99,10 @@ fn platforms_for(conn: &Connection, game_id: i64) -> AppResult<Vec<Platform>> {
          WHERE gp.game_id = ?1 ORDER BY p.name",
     )?;
     let rows = stmt.query_map([game_id], |row| {
-        Ok(Platform { id: row.get(0)?, name: row.get(1)? })
+        Ok(Platform {
+            id: row.get(0)?,
+            name: row.get(1)?,
+        })
     })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
@@ -95,7 +114,10 @@ fn genres_for(conn: &Connection, game_id: i64) -> AppResult<Vec<Genre>> {
          WHERE gg.game_id = ?1 ORDER BY g.name",
     )?;
     let rows = stmt.query_map([game_id], |row| {
-        Ok(Genre { id: row.get(0)?, name: row.get(1)? })
+        Ok(Genre {
+            id: row.get(0)?,
+            name: row.get(1)?,
+        })
     })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
@@ -106,7 +128,11 @@ fn screenshots_for(conn: &Connection, game_id: i64) -> AppResult<Vec<Screenshot>
          WHERE game_id = ?1 ORDER BY sort_order, id",
     )?;
     let rows = stmt.query_map([game_id], |row| {
-        Ok(Screenshot { id: row.get(0)?, path: row.get(1)?, sort_order: row.get(2)? })
+        Ok(Screenshot {
+            id: row.get(0)?,
+            path: row.get(1)?,
+            sort_order: row.get(2)?,
+        })
     })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
@@ -118,14 +144,21 @@ mod tests {
 
     fn seeded() -> Connection {
         let conn = db::open_in_memory().unwrap();
-        conn.execute_batch(include_str!("../../dev/seed.sql")).unwrap();
+        conn.execute_batch(include_str!("../../dev/seed.sql"))
+            .unwrap();
         conn
     }
 
     #[test]
     fn lists_games_by_status() {
         let conn = seeded();
-        let owned = list(&conn, &GameFilter { status: Some(Status::Owned) }).unwrap();
+        let owned = list(
+            &conn,
+            &GameFilter {
+                status: Some(Status::Owned),
+            },
+        )
+        .unwrap();
         assert_eq!(owned.len(), 4);
         assert_eq!(list(&conn, &GameFilter::default()).unwrap().len(), 6);
     }
@@ -149,7 +182,24 @@ mod tests {
     #[test]
     fn interested_game_cannot_be_on_the_shelf() {
         let conn = seeded();
-        let result = conn.execute("UPDATE games SET shelf_slot = 3 WHERE title = 'Baba Is You'", []);
+        let result = conn.execute(
+            "UPDATE games SET shelf_slot = 3 WHERE title = 'Baba Is You'",
+            [],
+        );
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn summaries_carry_screenshots_and_respect_featured_choice() {
+        let conn = seeded();
+        let games = list(&conn, &GameFilter::default()).unwrap();
+
+        let hades = games.iter().find(|g| g.title == "Hades").unwrap();
+        assert_eq!(hades.screenshot_paths.len(), 3);
+        assert_eq!(hades.featured_path.as_deref(), Some("placeholder:Hades 2"));
+
+        let stardew = games.iter().find(|g| g.title == "Stardew Valley").unwrap();
+        assert!(stardew.screenshot_paths.is_empty());
+        assert!(stardew.featured_path.is_none());
     }
 }

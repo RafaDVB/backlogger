@@ -14,3 +14,16 @@ INSERT INTO game_platforms (game_id, platform_id) VALUES
 
 INSERT INTO game_genres (game_id, genre_id) VALUES
   (1, 2), (2, 2), (3, 5), (4, 1), (5, 4), (6, 1);
+
+UPDATE games SET cover_path = 'placeholder:' || title || ' (cover)';
+
+INSERT INTO screenshots (game_id, path, sort_order) VALUES
+  (1, 'placeholder:Hollow Knight 1', 0), (1, 'placeholder:Hollow Knight 2', 1), (1, 'placeholder:Hollow Knight 3', 2),
+  (2, 'placeholder:Celeste 1', 0),       (2, 'placeholder:Celeste 2', 1),
+  (3, 'placeholder:Hades 1', 0),         (3, 'placeholder:Hades 2', 1),         (3, 'placeholder:Hades 3', 2),
+  (4, 'placeholder:Disco Elysium 1', 0), (4, 'placeholder:Disco Elysium 2', 1),
+  (5, 'placeholder:Baba Is You 1', 0);
+
+-- Hades has a chosen featured screenshot; Stardew Valley has no screenshots at all.
+UPDATE games SET featured_screenshot_id =
+  (SELECT id FROM screenshots WHERE path = 'placeholder:Hades 2') WHERE id = 3;
