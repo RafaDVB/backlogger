@@ -1,14 +1,30 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn ping(message: String) -> String {
-    format!("Rust received: {message}")
-}
+mod commands;
+mod db;
+mod error;
+mod models;
+mod state;
+
+use state::AppState;
+use std::sync::Mutex;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![ping])
+        .setup(|app| {
+            let dir = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&dir)?;
+            let conn = db::open(&dir.join("backlogger.db"))?;
+            app.manage(AppState { db: Mutex::new(conn) });
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            commands::system::ping,
+            commands::games::list_games,
+            commands::games::get_game,
+            commands::debug::seed_sample_data,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
