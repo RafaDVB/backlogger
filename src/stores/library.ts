@@ -24,5 +24,14 @@ export const useLibraryStore = defineStore("library", () => {
     }
   }
 
-  return { games, loading, error, interested, owned, load };
+  async function markOwned(id: number) {
+    try {
+      await gamesApi.markOwned(id);
+      await load();
+    } catch (e) {
+      error.value = describeError(e);
+    }
+  }
+
+  return { games, loading, error, interested, owned, load, markOwned };
 });

@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import * as debugApi from "../api/debug.ts";
+import * as debugApi from "../api/debug";
 import GameGrid from "../components/grid/GameGrid.vue";
-import { useLibraryStore } from "../stores/library.ts";
-import type { Status } from "../types/game.ts";
+import { isLeaving, useDragDrop } from "../composables/useDragDrop";
+import { useLibraryStore } from "../stores/library";
+import { useShelfStore } from "../stores/shelf";
+import type { Status } from "../types/game";
 
 const library = useLibraryStore();
+const shelf = useShelfStore();
+const { dragging, endDrag } = useDragDrop();
+
 const tab = ref<Status>("owned");
 const shown = computed(() => (tab.value === "owned" ? library.owned : library.interested));
 
@@ -14,16 +19,44 @@ onMounted(() => library.load());
 // Temporary: removed in slice 4 when you can add games for real.
 async function loadSamples() {
   await debugApi.seedSampleData();
-  await library.load();
+  await Promise.all([library.load(), shelf.load()]);
 }
 
 function openGame(id: number) {
   console.log("open game", id); // The detail view arrives in slice 5.
 }
+
+// Dropping a shelf game anywhere in the library asks to take it off the shelf.
+const removeZoneActive = ref(false);
+const acceptsRemoval = computed(() => dragging.value?.source === "shelf");
+
+function onDragOver(event: DragEvent) {
+  if (!acceptsRemoval.value) return;
+  event.preventDefault();
+  removeZoneActive.value = true;
+}
+
+function onDragLeave(event: DragEvent) {
+  if (isLeaving(event)) removeZoneActive.value = false;
+}
+
+function onDrop(event: DragEvent) {
+  if (!dragging.value || !acceptsRemoval.value) return;
+  event.preventDefault();
+  removeZoneActive.value = false;
+  const gameId = dragging.value.gameId;
+  endDrag();
+  shelf.requestRemoval(gameId);
+}
 </script>
 
 <template>
-  <section>
+  <section
+    :class="{ 'remove-zone': removeZoneActive }"
+    @dragover="onDragOver"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
+  >
     <nav class="tabs">
       <button :class="{ active: tab === 'owned' }" @click="tab = 'owned'">
         Owned ({{ library.owned.length }})
@@ -34,6 +67,7 @@ function openGame(id: number) {
     </nav>
 
     <p v-if="library.error" class="error">{{ library.error }}</p>
+    <p v-if="removeZoneActive" class="zone-hint">Drop here to take this game off the shelf</p>
 
     <div v-if="!library.loading && library.games.length === 0" class="empty">
       <p>No games yet.</p>
@@ -41,11 +75,27 @@ function openGame(id: number) {
     </div>
     <p v-else-if="shown.length === 0" class="empty">Nothing in this tab yet.</p>
 
-    <GameGrid v-else :games="shown" @select="openGame" />
+    <GameGrid
+      v-else
+      :games="shown"
+      @select="openGame"
+      @mark-owned="library.markOwned($event)"
+    />
   </section>
 </template>
 
 <style scoped>
+section {
+  min-height: 100%;
+  border: 2px dashed transparent;
+  border-radius: 8px;
+}
+section.remove-zone {
+  border-color: seagreen;
+}
+.zone-hint {
+  color: seagreen;
+}
 .tabs {
   display: flex;
   gap: 8px;

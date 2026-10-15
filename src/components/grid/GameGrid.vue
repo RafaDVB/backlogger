@@ -3,7 +3,7 @@ import type { GameSummary } from "../../types/game";
 import GameTile from "./GameTile.vue";
 
 defineProps<{ games: GameSummary[] }>();
-defineEmits<{ select: [id: number] }>();
+defineEmits<{ select: [id: number]; markOwned: [id: number] }>();
 </script>
 
 <template>
@@ -13,6 +13,7 @@ defineEmits<{ select: [id: number] }>();
       :key="game.id"
       :game="game"
       @select="$emit('select', $event)"
+      @mark-owned="$emit('markOwned', $event)"
     />
   </div>
 </template>

@@ -8,3 +8,7 @@ export function listGames(filter: GameFilter = {}): Promise<GameSummary[]> {
 export function getGame(id: number): Promise<GameDetail> {
   return invoke("get_game", { id });
 }
+
+export function markOwned(id: number): Promise<GameDetail> {
+  return invoke("mark_owned", { id });
+}

@@ -1,13 +1,11 @@
 <script setup lang="ts">
+import ShelfSidebar from "./components/shelf/ShelfSidebar.vue";
 import LibraryView from "./views/LibraryView.vue";
 </script>
 
 <template>
   <div class="app">
-    <aside class="shelf">
-      <h2>Now playing</h2>
-      <p class="hint">The six shelf slots arrive in slice 3.</p>
-    </aside>
+    <ShelfSidebar />
     <main class="main">
       <LibraryView />
     </main>

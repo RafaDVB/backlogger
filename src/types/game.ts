@@ -35,4 +35,4 @@ export interface GameDetail {
   screenshots: Screenshot[];
 }
 
-export interface GameFilter { status?: Status }
+export interface GameFilter { status?: Status, onShelf?: boolean }
