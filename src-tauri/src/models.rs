@@ -129,3 +129,22 @@ pub struct GameDetail {
     pub genres: Vec<Genre>,
     pub screenshots: Vec<Screenshot>,
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NewGame {
+    pub title: String,
+    pub release_year: Option<i64>,
+    pub status: Status,
+    pub platform_ids: Vec<i64>,
+    pub genre_ids: Vec<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GameEdit {
+    pub title: String,
+    pub release_year: Option<i64>,
+    pub platform_ids: Vec<i64>,
+    pub genre_ids: Vec<i64>,
+}

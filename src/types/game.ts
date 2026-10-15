@@ -36,3 +36,18 @@ export interface GameDetail {
 }
 
 export interface GameFilter { status?: Status, onShelf?: boolean }
+
+export interface NewGame {
+  title: string;
+  releaseYear: number | null;
+  status: Status;
+  platformIds: number[];
+  genreIds: number[];
+}
+
+export interface GameEdit {
+  title: string;
+  releaseYear: number | null;
+  platformIds: number[];
+  genreIds: number[];
+}

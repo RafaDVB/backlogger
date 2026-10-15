@@ -30,6 +30,12 @@ pub fn run() {
             commands::shelf::remove_from_shelf,
             commands::lists::list_ratings,
             commands::debug::seed_sample_data,
+            commands::games::create_game,
+            commands::games::update_game,
+            commands::games::delete_game,
+            commands::lists::list_genres,
+            commands::lists::list_platforms,
+            commands::lists::create_platform,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

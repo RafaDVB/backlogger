@@ -7,7 +7,10 @@ use rusqlite::Connection;
 use std::path::Path;
 
 // Append new migrations here; never edit one that has already shipped.
-const MIGRATIONS: &[&str] = &[include_str!("../../migrations/0001-init.sql")];
+const MIGRATIONS: &[&str] = &[
+    include_str!("../../migrations/0001-init.sql"),
+    include_str!("../../migrations/0002-presets.sql")
+];
 
 pub fn open(path: &Path) -> AppResult<Connection> {
     init(Connection::open(path)?)

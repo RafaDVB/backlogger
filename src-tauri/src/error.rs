@@ -20,6 +20,8 @@ pub enum AppError {
     AlreadyOnShelf,
     #[error("there is no game in that slot")]
     NotOnShelf,
+    #[error("{0}")]
+    Invalid(String),
 }
 
 pub type AppResult<T> = Result<T, AppError>;
@@ -42,6 +44,7 @@ impl Serialize for AppError {
             AppError::SlotTaken => "slot_taken",
             AppError::AlreadyOnShelf => "already_on_shelf",
             AppError::NotOnShelf => "not_on_shelf",
+            AppError::Invalid(_) => "invalid",
         };
         ErrorBody { code, message: self.to_string() }.serialize(serializer)
     }

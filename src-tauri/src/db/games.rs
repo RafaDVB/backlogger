@@ -150,6 +150,99 @@ pub fn mark_owned(conn: &Connection, id: i64) -> AppResult<()> {
     }
 }
 
+fn clean_title(title: &str) -> AppResult<String> {
+    let title = title.trim();
+    if title.is_empty() {
+        return Err(AppError::Invalid("a game needs a title".into()));
+    }
+    Ok(title.to_string())
+}
+
+fn check_year(year: Option<i64>) -> AppResult<()> {
+    match year {
+        Some(y) if !(1950..=2100).contains(&y) => {
+            Err(AppError::Invalid("that release year looks wrong".into()))
+        }
+        _ => Ok(()),
+    }
+}
+
+fn set_links(
+    conn: &Connection,
+    game_id: i64,
+    platform_ids: &[i64],
+    genre_ids: &[i64],
+) -> AppResult<()> {
+    conn.execute("DELETE FROM game_platforms WHERE game_id = ?1", [game_id])?;
+    conn.execute("DELETE FROM game_genres WHERE game_id = ?1", [game_id])?;
+    for platform_id in platform_ids {
+        conn.execute(
+            "INSERT OR IGNORE INTO game_platforms (game_id, platform_id) VALUES (?1, ?2)",
+            params![game_id, platform_id],
+        )?;
+    }
+    for genre_id in genre_ids {
+        conn.execute(
+            "INSERT OR IGNORE INTO game_genres (game_id, genre_id) VALUES (?1, ?2)",
+            params![game_id, genre_id],
+        )?;
+    }
+    Ok(())
+}
+
+pub fn create(conn: &mut Connection, new: &NewGame) -> AppResult<i64> {
+    let title = clean_title(&new.title)?;
+    check_year(new.release_year)?;
+    let tx = conn.transaction()?;
+    tx.execute(
+        "INSERT INTO games (title, release_year, status) VALUES (?1, ?2, ?3)",
+        params![title, new.release_year, new.status.as_str()],
+    )?;
+    let id = tx.last_insert_rowid();
+    set_links(&tx, id, &new.platform_ids, &new.genre_ids)?;
+    tx.commit()?;
+    Ok(id)
+}
+
+pub fn update(conn: &mut Connection, id: i64, edit: &GameEdit) -> AppResult<()> {
+    let title = clean_title(&edit.title)?;
+    check_year(edit.release_year)?;
+    let tx = conn.transaction()?;
+    let changed = tx.execute(
+        "UPDATE games SET title = ?1, release_year = ?2 WHERE id = ?3",
+        params![title, edit.release_year, id],
+    )?;
+    if changed == 0 {
+        return Err(AppError::NotFound);
+    }
+    set_links(&tx, id, &edit.platform_ids, &edit.genre_ids)?;
+    tx.commit()?;
+    Ok(())
+}
+
+pub fn delete(conn: &mut Connection, id: i64) -> AppResult<Vec<String>> {
+    let tx = conn.transaction()?;
+
+    let cover: Option<String> = tx
+        .query_row("SELECT cover_path FROM games WHERE id = ?1", [id], |row| row.get(0))
+        .optional()?
+        .ok_or(AppError::NotFound)?;
+    let mut paths: Vec<String> = Vec::new();
+    paths.extend(cover);
+
+    {
+        let mut stmt = tx.prepare("SELECT path FROM screenshots WHERE game_id = ?1")?;
+        let rows = stmt.query_map([id], |row| row.get::<_, String>(0))?;
+        for row in rows {
+            paths.push(row?);
+        }
+    }
+
+    tx.execute("DELETE FROM games WHERE id = ?1", [id])?;
+    tx.commit()?;
+    Ok(paths)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -226,4 +319,116 @@ mod tests {
         };
         assert_eq!(list(&conn, &filter).unwrap().len(), 2);
     }
+
+    fn count(conn: &Connection, sql: &str) -> i64 {
+        conn.query_row(sql, [], |row| row.get(0)).unwrap()
+    }
+
+    fn new_game(title: &str) -> NewGame {
+        NewGame {
+            title: title.into(),
+            release_year: Some(2024),
+            status: Status::Interested,
+            platform_ids: vec![],
+            genre_ids: vec![],
+        }
+    }
+
+    #[test]
+    fn creates_a_game_with_platforms_and_genres() {
+        let mut conn = seeded();
+        let pc: i64 = conn
+            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| r.get(0))
+            .unwrap();
+        let rpg: i64 = conn
+            .query_row("SELECT id FROM genres WHERE name = 'RPG'", [], |r| r.get(0))
+            .unwrap();
+        let new = NewGame { platform_ids: vec![pc], genre_ids: vec![rpg], ..new_game("Elden Ring") };
+
+        let id = create(&mut conn, &new).unwrap();
+
+        let game = get(&conn, id).unwrap();
+        assert_eq!(game.title, "Elden Ring");
+        assert_eq!(game.status, Status::Interested);
+        assert_eq!(game.platforms.len(), 1);
+        assert_eq!(game.genres[0].name, "RPG");
+    }
+
+    #[test]
+    fn create_trims_the_title() {
+        let mut conn = seeded();
+        let id = create(&mut conn, &new_game("  Tunic  ")).unwrap();
+        assert_eq!(get(&conn, id).unwrap().title, "Tunic");
+    }
+
+    #[test]
+    fn create_rejects_a_blank_title_and_a_silly_year() {
+        let mut conn = seeded();
+        assert!(matches!(create(&mut conn, &new_game("   ")), Err(AppError::Invalid(_))));
+        let old = NewGame { release_year: Some(1800), ..new_game("Ancient") };
+        assert!(matches!(create(&mut conn, &old), Err(AppError::Invalid(_))));
+    }
+
+    #[test]
+    fn a_failed_create_leaves_nothing_behind() {
+        let mut conn = seeded();
+        let before = count(&conn, "SELECT COUNT(*) FROM games");
+        let bad = NewGame { platform_ids: vec![9999], ..new_game("Ghost") };
+        assert!(create(&mut conn, &bad).is_err());
+        assert_eq!(count(&conn, "SELECT COUNT(*) FROM games"), before);
+    }
+
+    #[test]
+    fn update_replaces_the_editable_fields_only() {
+        let mut conn = seeded();
+        let pc: i64 = conn
+            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| r.get(0))
+            .unwrap();
+        let edit = GameEdit {
+            title: "Celeste (Edited)".into(),
+            release_year: Some(2018),
+            platform_ids: vec![pc],
+            genre_ids: vec![],
+        };
+
+        update(&mut conn, 2, &edit).unwrap();
+
+        let game = get(&conn, 2).unwrap();
+        assert_eq!(game.title, "Celeste (Edited)");
+        assert_eq!(game.platforms.len(), 1);
+        assert!(game.genres.is_empty());
+        assert_eq!(game.status, Status::Owned);
+        assert!(game.rating.is_some());
+    }
+
+    #[test]
+    fn update_of_a_missing_game_is_not_found() {
+        let mut conn = seeded();
+        let edit = GameEdit {
+            title: "Nope".into(),
+            release_year: None,
+            platform_ids: vec![],
+            genre_ids: vec![],
+        };
+        assert!(matches!(update(&mut conn, 999, &edit), Err(AppError::NotFound)));
+    }
+
+    #[test]
+    fn delete_removes_the_game_its_links_and_returns_its_image_paths() {
+        let mut conn = seeded();
+        let paths = delete(&mut conn, 1).unwrap();
+
+        assert_eq!(paths.len(), 4); // the cover and three screenshots
+        assert!(matches!(get(&conn, 1), Err(AppError::NotFound)));
+        assert_eq!(count(&conn, "SELECT COUNT(*) FROM screenshots WHERE game_id = 1"), 0);
+        assert_eq!(count(&conn, "SELECT COUNT(*) FROM game_platforms WHERE game_id = 1"), 0);
+    }
+
+    #[test]
+    fn delete_of_a_missing_game_is_not_found() {
+        let mut conn = seeded();
+        assert!(matches!(delete(&mut conn, 999), Err(AppError::NotFound)));
+    }
 }
+
+
