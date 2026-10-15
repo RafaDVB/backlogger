@@ -15,3 +15,10 @@ pub fn get_game(state: State<'_, AppState>, id: i64) -> AppResult<GameDetail> {
     let conn = state.db.lock().map_err(|_| AppError::Lock)?;
     games::get(&conn, id)
 }
+
+#[tauri::command]
+pub fn mark_owned(state: State<'_, AppState>, id: i64) -> AppResult<GameDetail> {
+    let conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    games::mark_owned(&conn, id)?;
+    games::get(&conn, id)
+}

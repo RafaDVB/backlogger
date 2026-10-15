@@ -19,10 +19,16 @@ pub fn run() {
             app.manage(AppState { db: Mutex::new(conn) });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
+                .invoke_handler(tauri::generate_handler![
             commands::system::ping,
             commands::games::list_games,
             commands::games::get_game,
+            commands::games::mark_owned,
+            commands::shelf::get_shelf,
+            commands::shelf::place_on_shelf,
+            commands::shelf::move_shelf_slot,
+            commands::shelf::remove_from_shelf,
+            commands::lists::list_ratings,
             commands::debug::seed_sample_data,
         ])
         .run(tauri::generate_context!())

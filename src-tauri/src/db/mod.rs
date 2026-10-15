@@ -1,4 +1,6 @@
 pub mod games;
+pub mod lists;
+pub mod shelf;
 
 use crate::error::AppResult;
 use rusqlite::Connection;

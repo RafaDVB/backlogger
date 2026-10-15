@@ -1,6 +1,6 @@
 use crate::error::{AppError, AppResult};
 use crate::models::*;
-use rusqlite::{Connection, OptionalExtension};
+use rusqlite::{Connection, OptionalExtension, params};
 use std::collections::HashMap;
 
 pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary>> {
@@ -13,10 +13,13 @@ pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary
                 )
          FROM games g
          WHERE (?1 IS NULL OR g.status = ?1)
+           AND (?2 IS NULL OR (g.shelf_slot IS NOT NULL) = ?2)
          ORDER BY g.title COLLATE NOCASE",
     )?;
-    let rows = stmt.query_map([filter.status.map(Status::as_str)], |row| {
-        Ok(GameSummary {
+    let rows = stmt.query_map(
+        params![filter.status.map(Status::as_str), filter.on_shelf],
+        |row| {
+            Ok(GameSummary {
             id: row.get(0)?,
             title: row.get(1)?,
             release_year: row.get(2)?,
@@ -27,7 +30,8 @@ pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary
             featured_path: row.get(7)?,
             screenshot_paths: Vec::new(),
         })
-    })?;
+        },
+    )?;
     let mut games = rows.collect::<Result<Vec<_>, _>>()?;
     let mut shots: HashMap<i64, Vec<String>> = HashMap::new();
     let mut stmt =
@@ -137,6 +141,15 @@ fn screenshots_for(conn: &Connection, game_id: i64) -> AppResult<Vec<Screenshot>
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
+pub fn mark_owned(conn: &Connection, id: i64) -> AppResult<()> {
+    let changed = conn.execute("UPDATE games SET status = 'owned' WHERE id = ?1", [id])?;
+    if changed == 0 {
+        Err(AppError::NotFound)
+    } else {
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -156,6 +169,7 @@ mod tests {
             &conn,
             &GameFilter {
                 status: Some(Status::Owned),
+                ..Default::default()
             },
         )
         .unwrap();
@@ -201,5 +215,15 @@ mod tests {
         let stardew = games.iter().find(|g| g.title == "Stardew Valley").unwrap();
         assert!(stardew.screenshot_paths.is_empty());
         assert!(stardew.featured_path.is_none());
+    }
+
+    #[test]
+    fn lists_only_shelved_games() {
+        let conn = seeded();
+        let filter = GameFilter {
+            on_shelf: Some(true),
+            ..Default::default()
+        };
+        assert_eq!(list(&conn, &filter).unwrap().len(), 2);
     }
 }

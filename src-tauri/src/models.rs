@@ -48,6 +48,24 @@ impl FromSql for Outcome {
 #[serde(rename_all = "camelCase", default)]
 pub struct GameFilter {
     pub status: Option<Status>,
+    pub on_shelf: Option<bool>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ShelfEntry {
+    pub slot: i64,
+    pub game: Option<GameSummary>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum RemoveResult {
+    Finished {
+        #[serde(rename = "ratingId")]
+        rating_id: Option<i64>,
+    },
+    Dropped,
+    NotFinished,
 }
 
 #[derive(Debug, Serialize)]
