@@ -18,13 +18,23 @@ pub fn ratings(conn: &Connection) -> AppResult<Vec<Rating>> {
 
 pub fn genres(conn: &Connection) -> AppResult<Vec<Genre>> {
     let mut stmt = conn.prepare("SELECT id, name FROM genres ORDER BY name COLLATE NOCASE")?;
-    let rows = stmt.query_map([], |row| Ok(Genre { id: row.get(0)?, name: row.get(1)? }))?;
+    let rows = stmt.query_map([], |row| {
+        Ok(Genre {
+            id: row.get(0)?,
+            name: row.get(1)?,
+        })
+    })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
 pub fn platforms(conn: &Connection) -> AppResult<Vec<Platform>> {
     let mut stmt = conn.prepare("SELECT id, name FROM platforms ORDER BY name COLLATE NOCASE")?;
-    let rows = stmt.query_map([], |row| Ok(Platform { id: row.get(0)?, name: row.get(1)? }))?;
+    let rows = stmt.query_map([], |row| {
+        Ok(Platform {
+            id: row.get(0)?,
+            name: row.get(1)?,
+        })
+    })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
@@ -37,14 +47,22 @@ pub fn create_platform(conn: &Connection, name: &str) -> AppResult<Platform> {
         .query_row(
             "SELECT id, name FROM platforms WHERE name = ?1 COLLATE NOCASE",
             [name],
-            |row| Ok(Platform { id: row.get(0)?, name: row.get(1)? }),
+            |row| {
+                Ok(Platform {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                })
+            },
         )
         .optional()?;
     if let Some(platform) = existing {
         return Ok(platform);
     }
     conn.execute("INSERT INTO platforms (name) VALUES (?1)", [name])?;
-    Ok(Platform { id: conn.last_insert_rowid(), name: name.to_string() })
+    Ok(Platform {
+        id: conn.last_insert_rowid(),
+        name: name.to_string(),
+    })
 }
 
 #[cfg(test)]
@@ -65,7 +83,12 @@ mod tests {
     fn presets_fill_genres_and_platforms() {
         let conn = db::open_in_memory().unwrap();
         assert!(genres(&conn).unwrap().iter().any(|g| g.name == "RPG"));
-        assert!(platforms(&conn).unwrap().iter().any(|p| p.name == "Nintendo Switch"));
+        assert!(
+            platforms(&conn)
+                .unwrap()
+                .iter()
+                .any(|p| p.name == "Nintendo Switch")
+        );
     }
 
     #[test]
@@ -80,7 +103,15 @@ mod tests {
     fn a_new_platform_is_added_and_a_blank_one_is_rejected() {
         let conn = db::open_in_memory().unwrap();
         let steam_deck = create_platform(&conn, "Steam Deck").unwrap();
-        assert!(platforms(&conn).unwrap().iter().any(|p| p.id == steam_deck.id));
-        assert!(matches!(create_platform(&conn, "  "), Err(AppError::Invalid(_))));
+        assert!(
+            platforms(&conn)
+                .unwrap()
+                .iter()
+                .any(|p| p.id == steam_deck.id)
+        );
+        assert!(matches!(
+            create_platform(&conn, "  "),
+            Err(AppError::Invalid(_))
+        ));
     }
 }

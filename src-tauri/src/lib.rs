@@ -11,15 +11,18 @@ use tauri::Manager;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
             let conn = db::open(&dir.join("backlogger.db"))?;
-            app.manage(AppState { db: Mutex::new(conn) });
+            app.manage(AppState {
+                db: Mutex::new(conn),
+            });
             Ok(())
         })
-                .invoke_handler(tauri::generate_handler![
+        .invoke_handler(tauri::generate_handler![
             commands::system::ping,
             commands::games::list_games,
             commands::games::get_game,

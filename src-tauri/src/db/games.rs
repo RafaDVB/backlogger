@@ -20,16 +20,16 @@ pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary
         params![filter.status.map(Status::as_str), filter.on_shelf],
         |row| {
             Ok(GameSummary {
-            id: row.get(0)?,
-            title: row.get(1)?,
-            release_year: row.get(2)?,
-            status: row.get(3)?,
-            outcome: row.get(4)?,
-            shelf_slot: row.get(5)?,
-            cover_path: row.get(6)?,
-            featured_path: row.get(7)?,
-            screenshot_paths: Vec::new(),
-        })
+                id: row.get(0)?,
+                title: row.get(1)?,
+                release_year: row.get(2)?,
+                status: row.get(3)?,
+                outcome: row.get(4)?,
+                shelf_slot: row.get(5)?,
+                cover_path: row.get(6)?,
+                featured_path: row.get(7)?,
+                screenshot_paths: Vec::new(),
+            })
         },
     )?;
     let mut games = rows.collect::<Result<Vec<_>, _>>()?;
@@ -224,7 +224,9 @@ pub fn delete(conn: &mut Connection, id: i64) -> AppResult<Vec<String>> {
     let tx = conn.transaction()?;
 
     let cover: Option<String> = tx
-        .query_row("SELECT cover_path FROM games WHERE id = ?1", [id], |row| row.get(0))
+        .query_row("SELECT cover_path FROM games WHERE id = ?1", [id], |row| {
+            row.get(0)
+        })
         .optional()?
         .ok_or(AppError::NotFound)?;
     let mut paths: Vec<String> = Vec::new();
@@ -338,12 +340,18 @@ mod tests {
     fn creates_a_game_with_platforms_and_genres() {
         let mut conn = seeded();
         let pc: i64 = conn
-            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| r.get(0))
+            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| {
+                r.get(0)
+            })
             .unwrap();
         let rpg: i64 = conn
             .query_row("SELECT id FROM genres WHERE name = 'RPG'", [], |r| r.get(0))
             .unwrap();
-        let new = NewGame { platform_ids: vec![pc], genre_ids: vec![rpg], ..new_game("Elden Ring") };
+        let new = NewGame {
+            platform_ids: vec![pc],
+            genre_ids: vec![rpg],
+            ..new_game("Elden Ring")
+        };
 
         let id = create(&mut conn, &new).unwrap();
 
@@ -364,8 +372,14 @@ mod tests {
     #[test]
     fn create_rejects_a_blank_title_and_a_silly_year() {
         let mut conn = seeded();
-        assert!(matches!(create(&mut conn, &new_game("   ")), Err(AppError::Invalid(_))));
-        let old = NewGame { release_year: Some(1800), ..new_game("Ancient") };
+        assert!(matches!(
+            create(&mut conn, &new_game("   ")),
+            Err(AppError::Invalid(_))
+        ));
+        let old = NewGame {
+            release_year: Some(1800),
+            ..new_game("Ancient")
+        };
         assert!(matches!(create(&mut conn, &old), Err(AppError::Invalid(_))));
     }
 
@@ -373,7 +387,10 @@ mod tests {
     fn a_failed_create_leaves_nothing_behind() {
         let mut conn = seeded();
         let before = count(&conn, "SELECT COUNT(*) FROM games");
-        let bad = NewGame { platform_ids: vec![9999], ..new_game("Ghost") };
+        let bad = NewGame {
+            platform_ids: vec![9999],
+            ..new_game("Ghost")
+        };
         assert!(create(&mut conn, &bad).is_err());
         assert_eq!(count(&conn, "SELECT COUNT(*) FROM games"), before);
     }
@@ -382,7 +399,9 @@ mod tests {
     fn update_replaces_the_editable_fields_only() {
         let mut conn = seeded();
         let pc: i64 = conn
-            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| r.get(0))
+            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| {
+                r.get(0)
+            })
             .unwrap();
         let edit = GameEdit {
             title: "Celeste (Edited)".into(),
@@ -410,7 +429,10 @@ mod tests {
             platform_ids: vec![],
             genre_ids: vec![],
         };
-        assert!(matches!(update(&mut conn, 999, &edit), Err(AppError::NotFound)));
+        assert!(matches!(
+            update(&mut conn, 999, &edit),
+            Err(AppError::NotFound)
+        ));
     }
 
     #[test]
@@ -420,8 +442,17 @@ mod tests {
 
         assert_eq!(paths.len(), 4); // the cover and three screenshots
         assert!(matches!(get(&conn, 1), Err(AppError::NotFound)));
-        assert_eq!(count(&conn, "SELECT COUNT(*) FROM screenshots WHERE game_id = 1"), 0);
-        assert_eq!(count(&conn, "SELECT COUNT(*) FROM game_platforms WHERE game_id = 1"), 0);
+        assert_eq!(
+            count(&conn, "SELECT COUNT(*) FROM screenshots WHERE game_id = 1"),
+            0
+        );
+        assert_eq!(
+            count(
+                &conn,
+                "SELECT COUNT(*) FROM game_platforms WHERE game_id = 1"
+            ),
+            0
+        );
     }
 
     #[test]
@@ -430,5 +461,3 @@ mod tests {
         assert!(matches!(delete(&mut conn, 999), Err(AppError::NotFound)));
     }
 }
-
-

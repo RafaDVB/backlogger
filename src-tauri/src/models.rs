@@ -22,7 +22,9 @@ impl FromSql for Status {
         match value.as_str()? {
             "interested" => Ok(Status::Interested),
             "owned" => Ok(Status::Owned),
-            other => Err(FromSqlError::Other(format!("unknown status: {other}").into())),
+            other => Err(FromSqlError::Other(
+                format!("unknown status: {other}").into(),
+            )),
         }
     }
 }
@@ -39,7 +41,9 @@ impl FromSql for Outcome {
         match value.as_str()? {
             "completed" => Ok(Outcome::Completed),
             "dropped" => Ok(Outcome::Dropped),
-            other => Err(FromSqlError::Other(format!("unknown outcome: {other}").into())),
+            other => Err(FromSqlError::Other(
+                format!("unknown outcome: {other}").into(),
+            )),
         }
     }
 }

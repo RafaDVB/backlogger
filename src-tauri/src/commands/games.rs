@@ -1,6 +1,6 @@
 use crate::db::games;
 use crate::error::{AppError, AppResult};
-use crate::models::{GameDetail, GameFilter, GameSummary, GameEdit, NewGame};
+use crate::models::{GameDetail, GameEdit, GameFilter, GameSummary, NewGame};
 use crate::state::AppState;
 use tauri::State;
 

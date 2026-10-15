@@ -46,6 +46,10 @@ impl Serialize for AppError {
             AppError::NotOnShelf => "not_on_shelf",
             AppError::Invalid(_) => "invalid",
         };
-        ErrorBody { code, message: self.to_string() }.serialize(serializer)
+        ErrorBody {
+            code,
+            message: self.to_string(),
+        }
+        .serialize(serializer)
     }
 }
