@@ -15,11 +15,20 @@
         "title": "backlogger",
         "width": 800,
         "height": 600,
-	      "dragDropEnabled": false
+        "dragDropEnabled": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "requireLiteralLeadingDot": false,
+          "allow": [
+            "$APPDATA/images/**/*"
+          ]
+        }
+      }
     }
   },
   "bundle": {

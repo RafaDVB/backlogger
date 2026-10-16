@@ -3,6 +3,7 @@ mod db;
 mod error;
 mod models;
 mod state;
+mod images;
 
 use state::AppState;
 use std::sync::Mutex;
@@ -17,9 +18,11 @@ pub fn run() {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
             let conn = db::open(&dir.join("backlogger.db"))?;
-            app.manage(AppState {
-                db: Mutex::new(conn),
-            });
+
+            let images_dir = dir.join("images");
+            std::fs::create_dir_all(&images_dir)?;
+
+            app.manage(AppState { db: Mutex::new(conn), images_dir });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -39,6 +42,10 @@ pub fn run() {
             commands::lists::list_genres,
             commands::lists::list_platforms,
             commands::lists::create_platform,
+            commands::images::get_images_dir,
+            commands::images::add_screenshot,
+            commands::images::delete_screenshot,
+            commands::images::set_cover
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

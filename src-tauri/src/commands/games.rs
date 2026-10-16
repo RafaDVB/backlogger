@@ -39,7 +39,12 @@ pub fn update_game(state: State<'_, AppState>, id: i64, edit: GameEdit) -> AppRe
 
 #[tauri::command]
 pub fn delete_game(state: State<'_, AppState>, id: i64) -> AppResult<()> {
-    let mut conn = state.db.lock().map_err(|_| AppError::Lock)?;
-    let _image_paths = games::delete(&mut conn, id)?;
+    let image_paths = {
+        let mut conn = state.db.lock().map_err(|_| AppError::Lock)?;
+        games::delete(&mut conn, id)?
+    };
+    for path in &image_paths {
+        crate::images::remove(&state.images_dir, path);
+    }
     Ok(())
 }

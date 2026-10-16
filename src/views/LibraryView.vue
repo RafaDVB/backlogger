@@ -6,6 +6,20 @@ import { isLeaving, useDragDrop } from "../composables/useDragDrop";
 import { useLibraryStore } from "../stores/library";
 import { useShelfStore } from "../stores/shelf";
 import type { Status } from "../types/game";
+import * as imagesApi from "../api/images";
+import { pickImages } from "../lib/pickImages";
+
+// TEMPORARY (4b): proves dialog, copy, database and asset protocol work together.
+const testTarget = computed(() => library.games.find((g) => g.screenshotPaths.length === 0));
+
+async function testAddScreenshot() {
+  const target = testTarget.value;
+  if (!target) return;
+  const [file] = await pickImages(false);
+  if (!file) return;
+  await imagesApi.addScreenshot(target.id, file);
+  await library.load();
+}
 
 const library = useLibraryStore();
 const shelf = useShelfStore();
@@ -51,12 +65,10 @@ function onDrop(event: DragEvent) {
 </script>
 
 <template>
-  <section
-    :class="{ 'remove-zone': removeZoneActive }"
-    @dragover="onDragOver"
-    @dragleave="onDragLeave"
-    @drop="onDrop"
-  >
+  <section :class="{ 'remove-zone': removeZoneActive }" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
+    <button v-if="testTarget" @click="testAddScreenshot">
+      Test: add a screenshot to {{ testTarget.title }}
+    </button>
     <nav class="tabs">
       <button :class="{ active: tab === 'owned' }" @click="tab = 'owned'">
         Owned ({{ library.owned.length }})
@@ -75,12 +87,7 @@ function onDrop(event: DragEvent) {
     </div>
     <p v-else-if="shown.length === 0" class="empty">Nothing in this tab yet.</p>
 
-    <GameGrid
-      v-else
-      :games="shown"
-      @select="openGame"
-      @mark-owned="library.markOwned($event)"
-    />
+    <GameGrid v-else :games="shown" @select="openGame" @mark-owned="library.markOwned($event)" />
   </section>
 </template>
 
@@ -90,17 +97,21 @@ section {
   border: 2px dashed transparent;
   border-radius: 8px;
 }
+
 section.remove-zone {
   border-color: seagreen;
 }
+
 .zone-hint {
   color: seagreen;
 }
+
 .tabs {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
 }
+
 .tabs button {
   padding: 6px 14px;
   border: 1px solid rgba(128, 128, 128, 0.4);
@@ -110,13 +121,16 @@ section.remove-zone {
   font: inherit;
   cursor: pointer;
 }
+
 .tabs button.active {
   background: rgba(128, 128, 128, 0.25);
   font-weight: 600;
 }
+
 .empty {
   opacity: 0.7;
 }
+
 .error {
   color: crimson;
 }

@@ -1,3 +1,12 @@
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { getImagesDir } from "../api/images";
+
+let imagesDir = "";
+
+export async function initImages(): Promise<void> {
+  imagesDir = (await getImagesDir()).replace(/\\/g, "/");
+}
+
 // Dev-only: draws a colored 16:9 image from the label, so we can test without real files.
 function placeholderImage(label: string): string {
   let hue = 0;
@@ -15,5 +24,6 @@ export function resolveImage(path: string | null): string | null {
   if (path.startsWith("placeholder:")) {
     return placeholderImage(path.slice("placeholder:".length));
   }
-  return path; // Slice 4: real files in the app data folder go through the asset protocol here.
+  if (/^(https?|data):/.test(path)) return path;
+  return convertFileSrc(`${imagesDir}/${path}`);
 }
