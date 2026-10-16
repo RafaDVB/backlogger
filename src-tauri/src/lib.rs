@@ -1,9 +1,9 @@
 mod commands;
 mod db;
 mod error;
+mod images;
 mod models;
 mod state;
-mod images;
 
 use state::AppState;
 use std::sync::Mutex;
@@ -22,7 +22,10 @@ pub fn run() {
             let images_dir = dir.join("images");
             std::fs::create_dir_all(&images_dir)?;
 
-            app.manage(AppState { db: Mutex::new(conn), images_dir });
+            app.manage(AppState {
+                db: Mutex::new(conn),
+                images_dir,
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -35,7 +38,6 @@ pub fn run() {
             commands::shelf::move_shelf_slot,
             commands::shelf::remove_from_shelf,
             commands::lists::list_ratings,
-            commands::debug::seed_sample_data,
             commands::games::create_game,
             commands::games::update_game,
             commands::games::delete_game,

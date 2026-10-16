@@ -1,25 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import * as debugApi from "../api/debug";
+import GameFormDialog from "../components/dialogs/GameFormDialog.vue";
 import GameGrid from "../components/grid/GameGrid.vue";
 import { isLeaving, useDragDrop } from "../composables/useDragDrop";
 import { useLibraryStore } from "../stores/library";
 import { useShelfStore } from "../stores/shelf";
 import type { Status } from "../types/game";
-import * as imagesApi from "../api/images";
-import { pickImages } from "../lib/pickImages";
-
-// TEMPORARY (4b): proves dialog, copy, database and asset protocol work together.
-const testTarget = computed(() => library.games.find((g) => g.screenshotPaths.length === 0));
-
-async function testAddScreenshot() {
-  const target = testTarget.value;
-  if (!target) return;
-  const [file] = await pickImages(false);
-  if (!file) return;
-  await imagesApi.addScreenshot(target.id, file);
-  await library.load();
-}
 
 const library = useLibraryStore();
 const shelf = useShelfStore();
@@ -30,17 +16,10 @@ const shown = computed(() => (tab.value === "owned" ? library.owned : library.in
 
 onMounted(() => library.load());
 
-// Temporary: removed in slice 4 when you can add games for real.
-async function loadSamples() {
-  await debugApi.seedSampleData();
-  await Promise.all([library.load(), shelf.load()]);
-}
+const form = ref<{ gameId: number | null } | null>(null);
+const openAdd = () => (form.value = { gameId: null });
+const openEdit = (id: number) => (form.value = { gameId: id });
 
-function openGame(id: number) {
-  console.log("open game", id); // The detail view arrives in slice 5.
-}
-
-// Dropping a shelf game anywhere in the library asks to take it off the shelf.
 const removeZoneActive = ref(false);
 const acceptsRemoval = computed(() => dragging.value?.source === "shelf");
 
@@ -65,29 +44,46 @@ function onDrop(event: DragEvent) {
 </script>
 
 <template>
-  <section :class="{ 'remove-zone': removeZoneActive }" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
-    <button v-if="testTarget" @click="testAddScreenshot">
-      Test: add a screenshot to {{ testTarget.title }}
-    </button>
-    <nav class="tabs">
-      <button :class="{ active: tab === 'owned' }" @click="tab = 'owned'">
-        Owned ({{ library.owned.length }})
-      </button>
-      <button :class="{ active: tab === 'interested' }" @click="tab = 'interested'">
-        Interested ({{ library.interested.length }})
-      </button>
-    </nav>
+  <section
+    :class="{ 'remove-zone': removeZoneActive }"
+    @dragover="onDragOver"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
+  >
+    <div class="top">
+      <nav class="tabs">
+        <button :class="{ active: tab === 'owned' }" @click="tab = 'owned'">
+          Owned ({{ library.owned.length }})
+        </button>
+        <button :class="{ active: tab === 'interested' }" @click="tab = 'interested'">
+          Interested ({{ library.interested.length }})
+        </button>
+      </nav>
+      <button class="add" @click="openAdd">+ Add game</button>
+    </div>
 
     <p v-if="library.error" class="error">{{ library.error }}</p>
     <p v-if="removeZoneActive" class="zone-hint">Drop here to take this game off the shelf</p>
 
     <div v-if="!library.loading && library.games.length === 0" class="empty">
       <p>No games yet.</p>
-      <button @click="loadSamples">Load sample data</button>
+      <button @click="openAdd">Add your first game</button>
     </div>
     <p v-else-if="shown.length === 0" class="empty">Nothing in this tab yet.</p>
 
-    <GameGrid v-else :games="shown" @select="openGame" @mark-owned="library.markOwned($event)" />
+    <GameGrid
+      v-else
+      :games="shown"
+      @select="openEdit"
+      @mark-owned="library.markOwned($event)"
+    />
+
+    <GameFormDialog
+      v-if="form"
+      :game-id="form.gameId"
+      :default-status="tab"
+      @close="form = null"
+    />
   </section>
 </template>
 
@@ -97,22 +93,25 @@ section {
   border: 2px dashed transparent;
   border-radius: 8px;
 }
-
 section.remove-zone {
   border-color: seagreen;
 }
-
 .zone-hint {
   color: seagreen;
 }
-
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
 .tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
 }
-
-.tabs button {
+.tabs button,
+.add,
+.empty button {
   padding: 6px 14px;
   border: 1px solid rgba(128, 128, 128, 0.4);
   border-radius: 6px;
@@ -121,16 +120,13 @@ section.remove-zone {
   font: inherit;
   cursor: pointer;
 }
-
 .tabs button.active {
   background: rgba(128, 128, 128, 0.25);
   font-weight: 600;
 }
-
 .empty {
   opacity: 0.7;
 }
-
 .error {
   color: crimson;
 }
