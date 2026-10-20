@@ -1,6 +1,6 @@
 use crate::db::games;
 use crate::error::{AppError, AppResult};
-use crate::models::{GameDetail, GameEdit, GameFilter, GameSummary, NewGame};
+use crate::models::{GameDetail, GameEdit, GameFilter, GameSummary, NewGame, Outcome};
 use crate::state::AppState;
 use tauri::State;
 
@@ -47,4 +47,37 @@ pub fn delete_game(state: State<'_, AppState>, id: i64) -> AppResult<()> {
         crate::images::remove(&state.images_dir, path);
     }
     Ok(())
+}
+
+#[tauri::command]
+pub fn set_featured_screenshot(
+    state: State<'_, AppState>,
+    game_id: i64,
+    screenshot_id: Option<i64>,
+) -> AppResult<GameDetail> {
+    let conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    games::set_featured_screenshot(&conn, game_id, screenshot_id)?;
+    games::get(&conn, game_id)
+}
+
+#[tauri::command]
+pub fn set_rating(
+    state: State<'_, AppState>,
+    game_id: i64,
+    rating_id: Option<i64>,
+) -> AppResult<GameDetail> {
+    let conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    games::set_rating(&conn, game_id, rating_id)?;
+    games::get(&conn, game_id)
+}
+
+#[tauri::command]
+pub fn set_outcome(
+    state: State<'_, AppState>,
+    game_id: i64,
+    outcome: Option<Outcome>,
+) -> AppResult<GameDetail> {
+    let conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    games::set_outcome(&conn, game_id, outcome)?;
+    games::get(&conn, game_id)
 }

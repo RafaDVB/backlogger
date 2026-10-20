@@ -245,6 +245,71 @@ pub fn delete(conn: &mut Connection, id: i64) -> AppResult<Vec<String>> {
     Ok(paths)
 }
 
+fn require_game(conn: &Connection, id: i64) -> AppResult<()> {
+    let exists: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM games WHERE id = ?1)",
+        [id],
+        |row| row.get(0),
+    )?;
+    if exists {
+        Ok(())
+    } else {
+        Err(AppError::NotFound)
+    }
+}
+
+pub fn set_featured_screenshot(
+    conn: &Connection,
+    game_id: i64,
+    screenshot_id: Option<i64>,
+) -> AppResult<()> {
+    require_game(conn, game_id)?;
+    if let Some(shot) = screenshot_id {
+        let belongs: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM screenshots WHERE id = ?1 AND game_id = ?2)",
+            params![shot, game_id],
+            |row| row.get(0),
+        )?;
+        if !belongs {
+            return Err(AppError::Invalid(
+                "that screenshot doesn't belong to this game".into(),
+            ));
+        }
+    }
+    conn.execute(
+        "UPDATE games SET featured_screenshot_id = ?1 WHERE id = ?2",
+        params![screenshot_id, game_id],
+    )?;
+    Ok(())
+}
+
+pub fn set_rating(conn: &Connection, game_id: i64, rating_id: Option<i64>) -> AppResult<()> {
+    require_game(conn, game_id)?;
+    conn.execute(
+        "UPDATE games SET rating_id = ?1 WHERE id = ?2",
+        params![rating_id, game_id],
+    )?;
+    Ok(())
+}
+
+pub fn set_outcome(conn: &Connection, game_id: i64, outcome: Option<Outcome>) -> AppResult<()> {
+    require_game(conn, game_id)?;
+    if outcome.is_some() {
+        let status: Status =
+            conn.query_row("SELECT status FROM games WHERE id = ?1", [game_id], |row| {
+                row.get(0)
+            })?;
+        if status != Status::Owned {
+            return Err(AppError::NotOwned);
+        }
+    }
+    conn.execute(
+        "UPDATE games SET outcome = ?1 WHERE id = ?2",
+        params![outcome.map(Outcome::as_str), game_id],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -459,5 +524,84 @@ mod tests {
     fn delete_of_a_missing_game_is_not_found() {
         let mut conn = seeded();
         assert!(matches!(delete(&mut conn, 999), Err(AppError::NotFound)));
+    }
+
+    fn id_of_screenshot(conn: &Connection, path: &str) -> i64 {
+        conn.query_row("SELECT id FROM screenshots WHERE path = ?1", [path], |r| {
+            r.get(0)
+        })
+        .unwrap()
+    }
+
+    fn featured_path_of(conn: &Connection, title: &str) -> Option<String> {
+        list(conn, &GameFilter::default())
+            .unwrap()
+            .into_iter()
+            .find(|g| g.title == title)
+            .unwrap()
+            .featured_path
+    }
+
+    #[test]
+    fn featuring_a_screenshot_and_resetting_it() {
+        let conn = seeded();
+        let second = id_of_screenshot(&conn, "placeholder:Hollow Knight 2");
+
+        set_featured_screenshot(&conn, 1, Some(second)).unwrap();
+        assert_eq!(
+            featured_path_of(&conn, "Hollow Knight").as_deref(),
+            Some("placeholder:Hollow Knight 2")
+        );
+
+        set_featured_screenshot(&conn, 1, None).unwrap();
+        assert_eq!(
+            featured_path_of(&conn, "Hollow Knight").as_deref(),
+            Some("placeholder:Hollow Knight 1")
+        );
+    }
+
+    #[test]
+    fn cannot_feature_another_games_screenshot() {
+        let conn = seeded();
+        let hades_shot = id_of_screenshot(&conn, "placeholder:Hades 1");
+        assert!(matches!(
+            set_featured_screenshot(&conn, 1, Some(hades_shot)),
+            Err(AppError::Invalid(_))
+        ));
+        assert!(matches!(
+            set_featured_screenshot(&conn, 999, None),
+            Err(AppError::NotFound)
+        ));
+    }
+
+    #[test]
+    fn rating_can_be_changed_and_cleared() {
+        let conn = seeded();
+        set_rating(&conn, 2, Some(3)).unwrap();
+        assert_eq!(get(&conn, 2).unwrap().rating.unwrap().label, "3");
+
+        set_rating(&conn, 2, None).unwrap();
+        assert!(get(&conn, 2).unwrap().rating.is_none());
+
+        assert!(matches!(
+            set_rating(&conn, 999, None),
+            Err(AppError::NotFound)
+        ));
+    }
+
+    #[test]
+    fn outcome_is_only_for_owned_games() {
+        let conn = seeded();
+        set_outcome(&conn, 1, Some(Outcome::Dropped)).unwrap();
+        assert_eq!(get(&conn, 1).unwrap().outcome, Some(Outcome::Dropped));
+
+        set_outcome(&conn, 1, None).unwrap();
+        assert_eq!(get(&conn, 1).unwrap().outcome, None);
+
+        // Baba Is You (game 5) is only "interested".
+        assert!(matches!(
+            set_outcome(&conn, 5, Some(Outcome::Completed)),
+            Err(AppError::NotOwned)
+        ));
     }
 }

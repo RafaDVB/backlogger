@@ -36,6 +36,15 @@ pub enum Outcome {
     Dropped,
 }
 
+impl Outcome {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Outcome::Completed => "completed",
+            Outcome::Dropped => "dropped",
+        }
+    }
+}
+
 impl FromSql for Outcome {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         match value.as_str()? {
