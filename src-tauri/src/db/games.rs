@@ -310,6 +310,15 @@ pub fn set_outcome(conn: &Connection, game_id: i64, outcome: Option<Outcome>) ->
     Ok(())
 }
 
+pub fn set_notes(conn: &Connection, game_id: i64, notes: &str) -> AppResult<()> {
+    require_game(conn, game_id)?;
+    conn.execute(
+        "UPDATE games SET notes = ?1 WHERE id = ?2",
+        params![notes, game_id],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -602,6 +611,17 @@ mod tests {
         assert!(matches!(
             set_outcome(&conn, 5, Some(Outcome::Completed)),
             Err(AppError::NotOwned)
+        ));
+    }
+
+    #[test]
+    fn notes_are_saved_and_read_back() {
+        let conn = seeded();
+        set_notes(&conn, 1, "Password: ABCD\nSecond line").unwrap();
+        assert_eq!(get(&conn, 1).unwrap().notes, "Password: ABCD\nSecond line");
+        assert!(matches!(
+            set_notes(&conn, 999, "x"),
+            Err(AppError::NotFound)
         ));
     }
 }

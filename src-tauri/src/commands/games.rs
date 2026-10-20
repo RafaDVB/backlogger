@@ -81,3 +81,9 @@ pub fn set_outcome(
     games::set_outcome(&conn, game_id, outcome)?;
     games::get(&conn, game_id)
 }
+
+#[tauri::command]
+pub fn set_notes(state: State<'_, AppState>, game_id: i64, notes: String) -> AppResult<()> {
+    let conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    games::set_notes(&conn, game_id, &notes)
+}

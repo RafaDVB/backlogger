@@ -5,10 +5,12 @@ import GameGrid from "../components/grid/GameGrid.vue";
 import { isLeaving, useDragDrop } from "../composables/useDragDrop";
 import { useLibraryStore } from "../stores/library";
 import { useShelfStore } from "../stores/shelf";
+import { useNavStore } from "../stores/navigation";
 import type { Status } from "../types/game";
 
 const library = useLibraryStore();
 const shelf = useShelfStore();
+const nav = useNavStore();
 const { dragging, endDrag } = useDragDrop();
 
 const tab = ref<Status>("owned");
@@ -16,9 +18,8 @@ const shown = computed(() => (tab.value === "owned" ? library.owned : library.in
 
 onMounted(() => library.load());
 
-const form = ref<{ gameId: number | null } | null>(null);
-const openAdd = () => (form.value = { gameId: null });
-const openEdit = (id: number) => (form.value = { gameId: id });
+const adding = ref(false);
+const openAdd = () => (adding.value = true);
 
 const removeZoneActive = ref(false);
 const acceptsRemoval = computed(() => dragging.value?.source === "shelf");
@@ -44,12 +45,7 @@ function onDrop(event: DragEvent) {
 </script>
 
 <template>
-  <section
-    :class="{ 'remove-zone': removeZoneActive }"
-    @dragover="onDragOver"
-    @dragleave="onDragLeave"
-    @drop="onDrop"
-  >
+  <section :class="{ 'remove-zone': removeZoneActive }" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
     <div class="top">
       <nav class="tabs">
         <button :class="{ active: tab === 'owned' }" @click="tab = 'owned'">
@@ -71,19 +67,9 @@ function onDrop(event: DragEvent) {
     </div>
     <p v-else-if="shown.length === 0" class="empty">Nothing in this tab yet.</p>
 
-    <GameGrid
-      v-else
-      :games="shown"
-      @select="openEdit"
-      @mark-owned="library.markOwned($event)"
-    />
+    <GameGrid v-else :games="shown" @select="nav.open($event)" @mark-owned="library.markOwned($event)" />
 
-    <GameFormDialog
-      v-if="form"
-      :game-id="form.gameId"
-      :default-status="tab"
-      @close="form = null"
-    />
+    <GameFormDialog v-if="adding" :game-id="null" :default-status="tab" @close="adding = false" />
   </section>
 </template>
 
@@ -93,22 +79,27 @@ section {
   border: 2px dashed transparent;
   border-radius: 8px;
 }
+
 section.remove-zone {
   border-color: seagreen;
 }
+
 .zone-hint {
   color: seagreen;
 }
+
 .top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
+
 .tabs {
   display: flex;
   gap: 8px;
 }
+
 .tabs button,
 .add,
 .empty button {
@@ -120,13 +111,16 @@ section.remove-zone {
   font: inherit;
   cursor: pointer;
 }
+
 .tabs button.active {
   background: rgba(128, 128, 128, 0.25);
   font-weight: 600;
 }
+
 .empty {
   opacity: 0.7;
 }
+
 .error {
   color: crimson;
 }

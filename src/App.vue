@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import ShelfSidebar from "./components/shelf/ShelfSidebar.vue";
+import { useNavStore } from "./stores/navigation";
+import GameDetailView from "./views/GameDetailView.vue";
 import LibraryView from "./views/LibraryView.vue";
+
+const nav = useNavStore();
 </script>
 
 <template>
   <div class="app">
     <ShelfSidebar />
     <main class="main">
-      <LibraryView />
+      <LibraryView v-show="nav.openGameId === null" />
+      <GameDetailView
+        v-if="nav.openGameId !== null"
+        :key="nav.openGameId"
+        :game-id="nav.openGameId"
+      />
     </main>
   </div>
 </template>

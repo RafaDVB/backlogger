@@ -44,6 +44,7 @@ pub fn run() {
             commands::games::set_featured_screenshot,
             commands::games::set_rating,
             commands::games::set_outcome,
+            commands::games::set_notes,
             commands::lists::list_genres,
             commands::lists::list_platforms,
             commands::lists::create_platform,

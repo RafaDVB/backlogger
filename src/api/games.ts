@@ -36,3 +36,7 @@ export function setRating(gameId: number, ratingId: number | null): Promise<Game
 export function setOutcome(gameId: number, outcome: Outcome | null): Promise<GameDetail> {
   return invoke("set_outcome", { gameId, outcome });
 }
+
+export function setNotes(gameId: number, notes: string): Promise<void> {
+  return invoke("set_notes", { gameId, notes });
+}

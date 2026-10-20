@@ -3,10 +3,12 @@ import { computed, ref } from "vue";
 import { isLeaving, useDragDrop } from "../../composables/useDragDrop";
 import { resolveImage } from "../../lib/images";
 import { useShelfStore } from "../../stores/shelf";
+import { useNavStore } from "../../stores/navigation";
 import type { ShelfEntry } from "../../types/shelf";
 
 const props = defineProps<{ entry: ShelfEntry }>();
 const shelf = useShelfStore();
+const nav = useNavStore();
 const { dragging, startDrag, endDrag } = useDragDrop();
 
 const over = ref(false);
@@ -62,23 +64,14 @@ async function onDrop(event: DragEvent) {
 </script>
 
 <template>
-  <div
-    class="slot"
-    :class="{ accept: over && canDrop, refuse: over && refusal }"
-    @dragover="onDragOver"
-    @dragleave="onDragLeave"
-    @drop="onDrop"
-  >
-    <div v-if="entry.game" class="game" draggable="true" @dragstart="onDragStart" @dragend="endDrag">
+  <div class="slot" :class="{ accept: over && canDrop, refuse: over && refusal }" @dragover="onDragOver"
+    @dragleave="onDragLeave" @drop="onDrop">
+    <div v-if="entry.game" class="game" draggable="true" @click="nav.open(entry.game.id)" @dragstart="onDragStart"
+      @dragend="endDrag">
       <img v-if="cover" :src="cover" :alt="entry.game.title" draggable="false" />
       <div v-else class="no-cover" />
       <span class="title">{{ entry.game.title }}</span>
-      <button
-        class="remove"
-        type="button"
-        title="Take off the shelf"
-        @click="shelf.requestRemoval(entry.game.id)"
-      >
+      <button class="remove" type="button" title="Take off the shelf" @click.stop="shelf.requestRemoval(entry.game.id)">
         ×
       </button>
     </div>
@@ -95,12 +88,15 @@ async function onDrop(event: DragEvent) {
   border: 2px dashed rgba(128, 128, 128, 0.35);
   border-radius: 8px;
 }
+
 .slot.accept {
   border-color: seagreen;
 }
+
 .slot.refuse {
   border-color: crimson;
 }
+
 .game {
   display: flex;
   align-items: center;
@@ -108,6 +104,7 @@ async function onDrop(event: DragEvent) {
   padding: 6px;
   cursor: grab;
 }
+
 .game img,
 .no-cover {
   width: 54px;
@@ -117,10 +114,12 @@ async function onDrop(event: DragEvent) {
   background: rgba(128, 128, 128, 0.25);
   flex-shrink: 0;
 }
+
 .title {
   flex: 1;
   font-size: 14px;
 }
+
 .remove {
   border: none;
   background: none;
@@ -130,9 +129,11 @@ async function onDrop(event: DragEvent) {
   cursor: pointer;
   opacity: 0.6;
 }
+
 .remove:hover {
   opacity: 1;
 }
+
 .empty {
   display: grid;
   place-items: center;
@@ -140,6 +141,7 @@ async function onDrop(event: DragEvent) {
   opacity: 0.5;
   font-size: 14px;
 }
+
 .hint {
   position: absolute;
   inset: 0;

@@ -4,3 +4,10 @@ export function describeError(e: unknown): string {
   }
   return String(e);
 }
+
+export function errorCode(e: unknown): string | null {
+  if (typeof e === "object" && e !== null && "code" in e) {
+    return String((e as { code: unknown }).code);
+  }
+  return null;
+}
