@@ -26,7 +26,9 @@ pub fn import(images_dir: &Path, kind: Kind, source: &Path) -> AppResult<String>
         .ok_or_else(|| AppError::Invalid("that file has no extension".into()))?;
 
     if !ALLOWED_EXTENSIONS.contains(&ext.as_str()) {
-        return Err(AppError::Invalid(format!("'.{ext}' images aren't supported")));
+        return Err(AppError::Invalid(format!(
+            "'.{ext}' images aren't supported"
+        )));
     }
 
     let relative = format!("{}/{}.{}", kind.folder(), Uuid::new_v4(), ext);
@@ -67,7 +69,10 @@ mod tests {
 
         assert!(relative.starts_with("screenshots/"));
         assert!(relative.ends_with(".png"));
-        assert_eq!(fs::read(images.join(&relative)).unwrap(), b"fake image bytes");
+        assert_eq!(
+            fs::read(images.join(&relative)).unwrap(),
+            b"fake image bytes"
+        );
     }
 
     #[test]
@@ -78,8 +83,14 @@ mod tests {
         fs::write(&text, b"x").unwrap();
         fs::write(&bare, b"x").unwrap();
 
-        assert!(matches!(import(dir.path(), Kind::Cover, &text), Err(AppError::Invalid(_))));
-        assert!(matches!(import(dir.path(), Kind::Cover, &bare), Err(AppError::Invalid(_))));
+        assert!(matches!(
+            import(dir.path(), Kind::Cover, &text),
+            Err(AppError::Invalid(_))
+        ));
+        assert!(matches!(
+            import(dir.path(), Kind::Cover, &bare),
+            Err(AppError::Invalid(_))
+        ));
     }
 
     #[test]

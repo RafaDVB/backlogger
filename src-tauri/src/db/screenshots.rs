@@ -1,6 +1,6 @@
 use crate::error::{AppError, AppResult};
 use crate::models::Screenshot;
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{Connection, OptionalExtension, params};
 
 pub fn add(conn: &Connection, game_id: i64, path: &str) -> AppResult<Screenshot> {
     let sort_order: i64 = conn.query_row(
@@ -12,13 +12,19 @@ pub fn add(conn: &Connection, game_id: i64, path: &str) -> AppResult<Screenshot>
         "INSERT INTO screenshots (game_id, path, sort_order) VALUES (?1, ?2, ?3)",
         params![game_id, path, sort_order],
     )?;
-    Ok(Screenshot { id: conn.last_insert_rowid(), path: path.to_string(), sort_order })
+    Ok(Screenshot {
+        id: conn.last_insert_rowid(),
+        path: path.to_string(),
+        sort_order,
+    })
 }
 
 /// Deletes the row and returns its file path so the caller can delete the file.
 pub fn delete(conn: &Connection, id: i64) -> AppResult<String> {
     let path: String = conn
-        .query_row("SELECT path FROM screenshots WHERE id = ?1", [id], |row| row.get(0))
+        .query_row("SELECT path FROM screenshots WHERE id = ?1", [id], |row| {
+            row.get(0)
+        })
         .optional()?
         .ok_or(AppError::NotFound)?;
     conn.execute("DELETE FROM screenshots WHERE id = ?1", [id])?;
@@ -28,10 +34,17 @@ pub fn delete(conn: &Connection, id: i64) -> AppResult<String> {
 /// Points a game at a new cover and returns the old cover path, if it had one.
 pub fn set_cover(conn: &Connection, game_id: i64, path: &str) -> AppResult<Option<String>> {
     let old: Option<String> = conn
-        .query_row("SELECT cover_path FROM games WHERE id = ?1", [game_id], |row| row.get(0))
+        .query_row(
+            "SELECT cover_path FROM games WHERE id = ?1",
+            [game_id],
+            |row| row.get(0),
+        )
         .optional()?
         .ok_or(AppError::NotFound)?;
-    conn.execute("UPDATE games SET cover_path = ?1 WHERE id = ?2", params![path, game_id])?;
+    conn.execute(
+        "UPDATE games SET cover_path = ?1 WHERE id = ?2",
+        params![path, game_id],
+    )?;
     Ok(old)
 }
 
@@ -43,7 +56,8 @@ mod tests {
 
     fn seeded() -> Connection {
         let conn = db::open_in_memory().unwrap();
-        conn.execute_batch(include_str!("../../dev/seed.sql")).unwrap();
+        conn.execute_batch(include_str!("../../dev/seed.sql"))
+            .unwrap();
         conn
     }
 
@@ -64,7 +78,11 @@ mod tests {
     fn deleting_the_featured_screenshot_falls_back_to_the_first() {
         let conn = seeded();
         let featured_id: i64 = conn
-            .query_row("SELECT featured_screenshot_id FROM games WHERE id = 3", [], |r| r.get(0))
+            .query_row(
+                "SELECT featured_screenshot_id FROM games WHERE id = 3",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
 
         assert_eq!(delete(&conn, featured_id).unwrap(), "placeholder:Hades 2");
@@ -79,7 +97,13 @@ mod tests {
         let conn = seeded();
         let old = set_cover(&conn, 1, "covers/new.png").unwrap();
         assert_eq!(old.as_deref(), Some("placeholder:Hollow Knight (cover)"));
-        assert_eq!(games::get(&conn, 1).unwrap().cover_path.as_deref(), Some("covers/new.png"));
-        assert!(matches!(set_cover(&conn, 999, "covers/x.png"), Err(AppError::NotFound)));
+        assert_eq!(
+            games::get(&conn, 1).unwrap().cover_path.as_deref(),
+            Some("covers/new.png")
+        );
+        assert!(matches!(
+            set_cover(&conn, 999, "covers/x.png"),
+            Err(AppError::NotFound)
+        ));
     }
 }
