@@ -33,6 +33,7 @@ pub fn run() {
             commands::games::list_games,
             commands::games::get_game,
             commands::games::mark_owned,
+            commands::games::set_platform_state,
             commands::shelf::get_shelf,
             commands::shelf::place_on_shelf,
             commands::shelf::move_shelf_slot,

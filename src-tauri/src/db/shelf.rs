@@ -134,7 +134,7 @@ pub fn remove(conn: &mut Connection, game_id: i64, result: &RemoveResult) -> App
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db;
+    use crate::db::{self, ownership};
 
     // Seed: 1 Hollow Knight (slot 1), 2 Celeste (owned, rated 9), 3 Hades (slot 2),
     // 4 Disco Elysium and 5 Baba Is You (interested), 6 Stardew Valley (owned).
@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn marking_owned_unlocks_the_shelf() {
         let mut conn = seeded();
-        games::mark_owned(&conn, 5).unwrap();
+        ownership::mark_owned(&mut conn, 5, None).unwrap();
         place(&mut conn, 5, 3).unwrap();
     }
 

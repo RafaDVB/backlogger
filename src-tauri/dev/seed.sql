@@ -18,6 +18,9 @@ SELECT g.id, p.id FROM m
 JOIN games g ON g.title = m.title
 JOIN platforms p ON p.name = m.platform;
 
+UPDATE game_platforms SET state = 'owned'
+WHERE game_id IN (SELECT id FROM games WHERE status = 'owned');
+
 WITH m(title, genre) AS (VALUES
   ('Hollow Knight', 'Platformer'), ('Celeste', 'Platformer'), ('Hades', 'Roguelike'),
   ('Disco Elysium', 'RPG'), ('Baba Is You', 'Puzzle'), ('Stardew Valley', 'RPG'))

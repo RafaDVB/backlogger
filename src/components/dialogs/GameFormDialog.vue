@@ -8,7 +8,7 @@ import { pickImages } from "../../lib/pickImages";
 import { useLibraryStore } from "../../stores/library";
 import { useListsStore } from "../../stores/lists";
 import { useShelfStore } from "../../stores/shelf";
-import type { GameDetail, Screenshot, Status } from "../../types/game";
+import type { GameDetail, Screenshot, Status, PlatformLink, PlatformState } from "../../types/game";
 
 const props = defineProps<{ gameId: number | null; defaultStatus: Status }>();
 const emit = defineEmits<{ close: [] }>();
@@ -102,6 +102,10 @@ async function save() {
     return;
   }
   const releaseYear = yearInput === "" ? null : Number(yearInput);
+  if (editingId.value === null && status.value === "owned" && platformIds.value.length === 0) {
+    error.value = "Pick the platform you own it on.";
+    return;
+  }
 
   saving.value = true;
   try {
@@ -110,8 +114,7 @@ async function save() {
       const created = await gamesApi.createGame({
         title: title.value,
         releaseYear,
-        status: status.value,
-        platformIds: platformIds.value,
+        platforms: platformLinks(),
         genreIds: genreIds.value,
       });
       id = created.id;
@@ -120,12 +123,11 @@ async function save() {
       await gamesApi.updateGame(id, {
         title: title.value,
         releaseYear,
-        platformIds: platformIds.value,
+        platforms: platformLinks(),
         genreIds: genreIds.value,
       });
     }
 
-    // Each finished step is removed from its list, so a retry only repeats what's left.
     while (removedScreenshotIds.value.length > 0) {
       const removedId = removedScreenshotIds.value[0];
       await imagesApi.deleteScreenshot(removedId);
@@ -145,7 +147,7 @@ async function save() {
     emit("close");
   } catch (e) {
     error.value = describeError(e);
-    await library.load(); // the game may already exist even though a later step failed
+    await library.load();
   } finally {
     saving.value = false;
   }
@@ -164,6 +166,17 @@ async function removeGame() {
   } finally {
     saving.value = false;
   }
+}
+
+function platformLinks(): PlatformLink[] {
+  const existing = new Map<number, PlatformState>(
+    (original.value?.platforms ?? []).map((p): [number, PlatformState] => [p.id, p.state]),
+  );
+  const fallback: PlatformState = status.value === "owned" ? "owned" : "wanted";
+  return platformIds.value.map((id) => ({
+    platformId: id,
+    state: existing.get(id) ?? fallback,
+  }));
 }
 </script>
 
@@ -203,12 +216,8 @@ async function removeGame() {
             </label>
           </div>
           <div class="row">
-            <input
-              v-model="newPlatform"
-              type="text"
-              placeholder="Another platform…"
-              @keydown.enter.prevent="addPlatform"
-            />
+            <input v-model="newPlatform" type="text" placeholder="Another platform…"
+              @keydown.enter.prevent="addPlatform" />
             <button type="button" @click="addPlatform">Add</button>
           </div>
         </fieldset>
@@ -226,12 +235,8 @@ async function removeGame() {
         <div class="field">
           <span>Cover</span>
           <div class="row">
-            <img
-              v-if="original?.coverPath && !coverFile"
-              class="thumb cover"
-              :src="resolveImage(original.coverPath) ?? undefined"
-              alt=""
-            />
+            <img v-if="original?.coverPath && !coverFile" class="thumb cover"
+              :src="resolveImage(original.coverPath) ?? undefined" alt="" />
             <button type="button" @click="chooseCover">Choose cover…</button>
             <span v-if="coverFile" class="staged">{{ fileName(coverFile) }}</span>
           </div>
@@ -240,12 +245,8 @@ async function removeGame() {
         <div class="field">
           <span>Screenshots</span>
           <div class="thumbs">
-            <div
-              v-for="shot in existingScreenshots"
-              :key="shot.id"
-              class="thumb-wrap"
-              :class="{ removed: removedScreenshotIds.includes(shot.id) }"
-            >
+            <div v-for="shot in existingScreenshots" :key="shot.id" class="thumb-wrap"
+              :class="{ removed: removedScreenshotIds.includes(shot.id) }">
               <img class="thumb" :src="resolveImage(shot.path) ?? undefined" alt="" />
               <button type="button" class="x" @click="toggleRemoved(shot.id)">
                 {{ removedScreenshotIds.includes(shot.id) ? "↺" : "×" }}
@@ -268,12 +269,7 @@ async function removeGame() {
           <button type="button" :disabled="saving" @click="emit('close')">Cancel</button>
 
           <template v-if="editingId !== null">
-            <button
-              v-if="!confirmingDelete"
-              type="button"
-              class="danger"
-              @click="confirmingDelete = true"
-            >
+            <button v-if="!confirmingDelete" type="button" class="danger" @click="confirmingDelete = true">
               Delete…
             </button>
             <template v-else>
@@ -299,6 +295,7 @@ async function removeGame() {
   background: rgba(0, 0, 0, 0.5);
   z-index: 10;
 }
+
 .panel {
   width: min(560px, 92vw);
   max-height: 90vh;
@@ -308,6 +305,7 @@ async function removeGame() {
   background: Canvas;
   color: CanvasText;
 }
+
 .field {
   display: flex;
   flex-direction: column;
@@ -316,11 +314,13 @@ async function removeGame() {
   padding: 0;
   border: none;
 }
-.field > span,
-.field > legend {
+
+.field>span,
+.field>legend {
   font-weight: 600;
   font-size: 14px;
 }
+
 .field input[type="text"] {
   padding: 6px 8px;
   border: 1px solid rgba(128, 128, 128, 0.5);
@@ -329,27 +329,33 @@ async function removeGame() {
   color: inherit;
   font: inherit;
 }
+
 .row {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .checks {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 14px;
 }
+
 .thumbs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
+
 .thumb-wrap {
   position: relative;
 }
+
 .thumb-wrap.removed .thumb {
   opacity: 0.25;
 }
+
 .thumb {
   width: 96px;
   height: 54px;
@@ -357,10 +363,12 @@ async function removeGame() {
   border-radius: 4px;
   background: rgba(128, 128, 128, 0.25);
 }
+
 .thumb.cover {
   width: 54px;
   height: 72px;
 }
+
 .x {
   border: none;
   background: none;
@@ -368,6 +376,7 @@ async function removeGame() {
   cursor: pointer;
   opacity: 0.7;
 }
+
 .thumb-wrap .x {
   position: absolute;
   top: 0;
@@ -377,15 +386,18 @@ async function removeGame() {
   background: rgba(0, 0, 0, 0.7);
   color: white;
 }
+
 .staged-list {
   margin: 0;
   padding-left: 18px;
   font-size: 14px;
 }
+
 .staged {
   font-size: 14px;
   opacity: 0.8;
 }
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -393,6 +405,7 @@ async function removeGame() {
   gap: 8px;
   margin-top: 16px;
 }
+
 button {
   padding: 6px 14px;
   border: 1px solid rgba(128, 128, 128, 0.5);
@@ -402,17 +415,21 @@ button {
   font: inherit;
   cursor: pointer;
 }
+
 button:hover:not(:disabled) {
   background: rgba(128, 128, 128, 0.2);
 }
+
 button:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
 .danger {
   border-color: crimson;
   color: crimson;
 }
+
 .error {
   color: crimson;
 }

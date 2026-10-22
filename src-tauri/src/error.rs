@@ -22,6 +22,10 @@ pub enum AppError {
     NotOnShelf,
     #[error("{0}")]
     Invalid(String),
+    #[error("take this game off the shelf before un-owning its last platform")]
+    StillOnShelf,
+    #[error("clear this game's outcome before un-owning its last platform")]
+    HasOutcome,
 }
 
 pub type AppResult<T> = Result<T, AppError>;
@@ -45,6 +49,8 @@ impl Serialize for AppError {
             AppError::AlreadyOnShelf => "already_on_shelf",
             AppError::NotOnShelf => "not_on_shelf",
             AppError::Invalid(_) => "invalid",
+            AppError::StillOnShelf => "still_on_shelf",
+            AppError::HasOutcome => "has_outcome",
         };
         ErrorBody {
             code,

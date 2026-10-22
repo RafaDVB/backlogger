@@ -1,7 +1,8 @@
 pub mod games;
 pub mod lists;
-pub mod shelf;
+pub mod ownership;
 pub mod screenshots;
+pub mod shelf;
 
 use crate::error::AppResult;
 use rusqlite::Connection;
@@ -11,6 +12,7 @@ use std::path::Path;
 const MIGRATIONS: &[&str] = &[
     include_str!("../../migrations/0001-init.sql"),
     include_str!("../../migrations/0002-presets.sql"),
+    include_str!("../../migrations/0003-platform_state.sql"),
 ];
 
 pub fn open(path: &Path) -> AppResult<Connection> {

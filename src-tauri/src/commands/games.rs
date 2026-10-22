@@ -1,6 +1,8 @@
-use crate::db::games;
+use crate::db::{games, ownership};
 use crate::error::{AppError, AppResult};
-use crate::models::{GameDetail, GameEdit, GameFilter, GameSummary, NewGame, Outcome};
+use crate::models::{
+    GameDetail, GameEdit, GameFilter, GameSummary, NewGame, Outcome, PlatformState,
+};
 use crate::state::AppState;
 use tauri::State;
 
@@ -17,10 +19,26 @@ pub fn get_game(state: State<'_, AppState>, id: i64) -> AppResult<GameDetail> {
 }
 
 #[tauri::command]
-pub fn mark_owned(state: State<'_, AppState>, id: i64) -> AppResult<GameDetail> {
-    let conn = state.db.lock().map_err(|_| AppError::Lock)?;
-    games::mark_owned(&conn, id)?;
+pub fn mark_owned(
+    state: State<'_, AppState>,
+    id: i64,
+    platform_id: Option<i64>,
+) -> AppResult<GameDetail> {
+    let mut conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    ownership::mark_owned(&mut conn, id, platform_id)?;
     games::get(&conn, id)
+}
+
+#[tauri::command]
+pub fn set_platform_state(
+    state: State<'_, AppState>,
+    game_id: i64,
+    platform_id: i64,
+    link_state: Option<PlatformState>,
+) -> AppResult<GameDetail> {
+    let mut conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    ownership::set_platform_state(&mut conn, game_id, platform_id, link_state)?;
+    games::get(&conn, game_id)
 }
 
 #[tauri::command]

@@ -138,7 +138,7 @@ pub struct GameDetail {
     pub notes: String,
     pub rawg_id: Option<i64>,
     pub rating: Option<Rating>,
-    pub platforms: Vec<Platform>,
+    pub platforms: Vec<GamePlatform>,
     pub genres: Vec<Genre>,
     pub screenshots: Vec<Screenshot>,
 }
@@ -148,8 +148,7 @@ pub struct GameDetail {
 pub struct NewGame {
     pub title: String,
     pub release_year: Option<i64>,
-    pub status: Status,
-    pub platform_ids: Vec<i64>,
+    pub platforms: Vec<PlatformLink>,
     pub genre_ids: Vec<i64>,
 }
 
@@ -158,6 +157,48 @@ pub struct NewGame {
 pub struct GameEdit {
     pub title: String,
     pub release_year: Option<i64>,
-    pub platform_ids: Vec<i64>,
+    pub platforms: Vec<PlatformLink>,
     pub genre_ids: Vec<i64>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PlatformState {
+    Owned,
+    Wanted,
+}
+
+impl PlatformState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            PlatformState::Owned => "owned",
+            PlatformState::Wanted => "wanted",
+        }
+    }
+}
+
+impl FromSql for PlatformState {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        match value.as_str()? {
+            "owned" => Ok(PlatformState::Owned),
+            "wanted" => Ok(PlatformState::Wanted),
+            other => Err(FromSqlError::Other(
+                format!("unknown platform state: {other}").into(),
+            )),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlatformLink {
+    pub platform_id: i64,
+    pub state: PlatformState,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GamePlatform {
+    pub id: i64,
+    pub name: String,
+    pub state: PlatformState,
 }

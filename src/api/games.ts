@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { GameDetail, GameFilter, GameSummary, NewGame, GameEdit, Outcome } from "../types/game";
+import type { GameDetail, GameFilter, GameSummary, NewGame, GameEdit, Outcome, PlatformState } from "../types/game";
 
 export function listGames(filter: GameFilter = {}): Promise<GameSummary[]> {
   return invoke("list_games", { filter });
@@ -9,8 +9,16 @@ export function getGame(id: number): Promise<GameDetail> {
   return invoke("get_game", { id });
 }
 
-export function markOwned(id: number): Promise<GameDetail> {
-  return invoke("mark_owned", { id });
+export function markOwned(id: number, platformId: number | null = null): Promise<GameDetail> {
+  return invoke("mark_owned", { id, platformId });
+}
+
+export function setPlatformState(
+  gameId: number,
+  platformId: number,
+  state: PlatformState | null,
+): Promise<GameDetail> {
+  return invoke("set_platform_state", { gameId, platformId, linkState: state });
 }
 
 export function createGame(newGame: NewGame): Promise<GameDetail> {

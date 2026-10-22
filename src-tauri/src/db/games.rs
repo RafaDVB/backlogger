@@ -1,3 +1,4 @@
+use crate::db::ownership;
 use crate::error::{AppError, AppResult};
 use crate::models::*;
 use rusqlite::{Connection, OptionalExtension, params};
@@ -96,16 +97,17 @@ pub fn get(conn: &Connection, id: i64) -> AppResult<GameDetail> {
     Ok(game)
 }
 
-fn platforms_for(conn: &Connection, game_id: i64) -> AppResult<Vec<Platform>> {
+fn platforms_for(conn: &Connection, game_id: i64) -> AppResult<Vec<GamePlatform>> {
     let mut stmt = conn.prepare(
-        "SELECT p.id, p.name FROM platforms p
+        "SELECT p.id, p.name, gp.state FROM platforms p
          JOIN game_platforms gp ON gp.platform_id = p.id
          WHERE gp.game_id = ?1 ORDER BY p.name",
     )?;
     let rows = stmt.query_map([game_id], |row| {
-        Ok(Platform {
+        Ok(GamePlatform {
             id: row.get(0)?,
             name: row.get(1)?,
+            state: row.get(2)?,
         })
     })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
@@ -141,15 +143,6 @@ fn screenshots_for(conn: &Connection, game_id: i64) -> AppResult<Vec<Screenshot>
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
-pub fn mark_owned(conn: &Connection, id: i64) -> AppResult<()> {
-    let changed = conn.execute("UPDATE games SET status = 'owned' WHERE id = ?1", [id])?;
-    if changed == 0 {
-        Err(AppError::NotFound)
-    } else {
-        Ok(())
-    }
-}
-
 fn clean_title(title: &str) -> AppResult<String> {
     let title = title.trim();
     if title.is_empty() {
@@ -170,15 +163,16 @@ fn check_year(year: Option<i64>) -> AppResult<()> {
 fn set_links(
     conn: &Connection,
     game_id: i64,
-    platform_ids: &[i64],
+    platforms: &[PlatformLink],
     genre_ids: &[i64],
 ) -> AppResult<()> {
     conn.execute("DELETE FROM game_platforms WHERE game_id = ?1", [game_id])?;
     conn.execute("DELETE FROM game_genres WHERE game_id = ?1", [game_id])?;
-    for platform_id in platform_ids {
+    for link in platforms {
         conn.execute(
-            "INSERT OR IGNORE INTO game_platforms (game_id, platform_id) VALUES (?1, ?2)",
-            params![game_id, platform_id],
+            "INSERT INTO game_platforms (game_id, platform_id, state) VALUES (?1, ?2, ?3)
+             ON CONFLICT(game_id, platform_id) DO UPDATE SET state = excluded.state",
+            params![game_id, link.platform_id, link.state.as_str()],
         )?;
     }
     for genre_id in genre_ids {
@@ -194,12 +188,14 @@ pub fn create(conn: &mut Connection, new: &NewGame) -> AppResult<i64> {
     let title = clean_title(&new.title)?;
     check_year(new.release_year)?;
     let tx = conn.transaction()?;
+    // Every game starts as Interested; sync_status below promotes it if a platform is owned.
     tx.execute(
-        "INSERT INTO games (title, release_year, status) VALUES (?1, ?2, ?3)",
-        params![title, new.release_year, new.status.as_str()],
+        "INSERT INTO games (title, release_year, status) VALUES (?1, ?2, 'interested')",
+        params![title, new.release_year],
     )?;
     let id = tx.last_insert_rowid();
-    set_links(&tx, id, &new.platform_ids, &new.genre_ids)?;
+    set_links(&tx, id, &new.platforms, &new.genre_ids)?;
+    ownership::sync_status(&tx, id)?;
     tx.commit()?;
     Ok(id)
 }
@@ -215,7 +211,8 @@ pub fn update(conn: &mut Connection, id: i64, edit: &GameEdit) -> AppResult<()> 
     if changed == 0 {
         return Err(AppError::NotFound);
     }
-    set_links(&tx, id, &edit.platform_ids, &edit.genre_ids)?;
+    set_links(&tx, id, &edit.platforms, &edit.genre_ids)?;
+    ownership::sync_status(&tx, id)?; // may refuse, which rolls everything back
     tx.commit()?;
     Ok(())
 }
@@ -245,7 +242,7 @@ pub fn delete(conn: &mut Connection, id: i64) -> AppResult<Vec<String>> {
     Ok(paths)
 }
 
-fn require_game(conn: &Connection, id: i64) -> AppResult<()> {
+pub(super) fn require_game(conn: &Connection, id: i64) -> AppResult<()> {
     let exists: bool = conn.query_row(
         "SELECT EXISTS(SELECT 1 FROM games WHERE id = ?1)",
         [id],
@@ -400,12 +397,15 @@ mod tests {
         conn.query_row(sql, [], |row| row.get(0)).unwrap()
     }
 
+    fn link(platform_id: i64, state: PlatformState) -> PlatformLink {
+        PlatformLink { platform_id, state }
+    }
+
     fn new_game(title: &str) -> NewGame {
         NewGame {
             title: title.into(),
             release_year: Some(2024),
-            status: Status::Interested,
-            platform_ids: vec![],
+            platforms: vec![],
             genre_ids: vec![],
         }
     }
@@ -422,7 +422,7 @@ mod tests {
             .query_row("SELECT id FROM genres WHERE name = 'RPG'", [], |r| r.get(0))
             .unwrap();
         let new = NewGame {
-            platform_ids: vec![pc],
+            platforms: vec![link(pc, PlatformState::Wanted)],
             genre_ids: vec![rpg],
             ..new_game("Elden Ring")
         };
@@ -433,7 +433,77 @@ mod tests {
         assert_eq!(game.title, "Elden Ring");
         assert_eq!(game.status, Status::Interested);
         assert_eq!(game.platforms.len(), 1);
+        assert_eq!(game.platforms[0].state, PlatformState::Wanted);
         assert_eq!(game.genres[0].name, "RPG");
+    }
+
+    #[test]
+    fn a_failed_create_leaves_nothing_behind() {
+        let mut conn = seeded();
+        let before = count(&conn, "SELECT COUNT(*) FROM games");
+        let bad = NewGame {
+            platforms: vec![link(9999, PlatformState::Wanted)],
+            ..new_game("Ghost")
+        };
+        assert!(create(&mut conn, &bad).is_err());
+        assert_eq!(count(&conn, "SELECT COUNT(*) FROM games"), before);
+    }
+
+    #[test]
+    fn update_replaces_the_editable_fields_only() {
+        let mut conn = seeded();
+        let pc: i64 = conn
+            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        let edit = GameEdit {
+            title: "Celeste (Edited)".into(),
+            release_year: Some(2018),
+            platforms: vec![link(pc, PlatformState::Owned)],
+            genre_ids: vec![],
+        };
+
+        update(&mut conn, 2, &edit).unwrap();
+
+        let game = get(&conn, 2).unwrap();
+        assert_eq!(game.title, "Celeste (Edited)");
+        assert_eq!(game.platforms.len(), 1);
+        assert!(game.genres.is_empty());
+        assert_eq!(game.status, Status::Owned);
+        assert!(game.rating.is_some());
+    }
+
+    #[test]
+    fn update_of_a_missing_game_is_not_found() {
+        let mut conn = seeded();
+        let edit = GameEdit {
+            title: "Nope".into(),
+            release_year: None,
+            platforms: vec![],
+            genre_ids: vec![],
+        };
+        assert!(matches!(
+            update(&mut conn, 999, &edit),
+            Err(AppError::NotFound)
+        ));
+    }
+
+    #[test]
+    fn update_cannot_drop_the_last_owned_platform_of_a_shelved_game() {
+        let mut conn = seeded();
+        let edit = GameEdit {
+            title: "Hollow Knight".into(),
+            release_year: Some(2017),
+            platforms: vec![],
+            genre_ids: vec![],
+        };
+
+        assert!(matches!(
+            update(&mut conn, 1, &edit),
+            Err(AppError::StillOnShelf)
+        ));
+        assert_eq!(get(&conn, 1).unwrap().platforms.len(), 2);
     }
 
     #[test]
@@ -455,58 +525,6 @@ mod tests {
             ..new_game("Ancient")
         };
         assert!(matches!(create(&mut conn, &old), Err(AppError::Invalid(_))));
-    }
-
-    #[test]
-    fn a_failed_create_leaves_nothing_behind() {
-        let mut conn = seeded();
-        let before = count(&conn, "SELECT COUNT(*) FROM games");
-        let bad = NewGame {
-            platform_ids: vec![9999],
-            ..new_game("Ghost")
-        };
-        assert!(create(&mut conn, &bad).is_err());
-        assert_eq!(count(&conn, "SELECT COUNT(*) FROM games"), before);
-    }
-
-    #[test]
-    fn update_replaces_the_editable_fields_only() {
-        let mut conn = seeded();
-        let pc: i64 = conn
-            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| {
-                r.get(0)
-            })
-            .unwrap();
-        let edit = GameEdit {
-            title: "Celeste (Edited)".into(),
-            release_year: Some(2018),
-            platform_ids: vec![pc],
-            genre_ids: vec![],
-        };
-
-        update(&mut conn, 2, &edit).unwrap();
-
-        let game = get(&conn, 2).unwrap();
-        assert_eq!(game.title, "Celeste (Edited)");
-        assert_eq!(game.platforms.len(), 1);
-        assert!(game.genres.is_empty());
-        assert_eq!(game.status, Status::Owned);
-        assert!(game.rating.is_some());
-    }
-
-    #[test]
-    fn update_of_a_missing_game_is_not_found() {
-        let mut conn = seeded();
-        let edit = GameEdit {
-            title: "Nope".into(),
-            release_year: None,
-            platform_ids: vec![],
-            genre_ids: vec![],
-        };
-        assert!(matches!(
-            update(&mut conn, 999, &edit),
-            Err(AppError::NotFound)
-        ));
     }
 
     #[test]
