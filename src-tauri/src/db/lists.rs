@@ -114,4 +114,13 @@ mod tests {
             Err(AppError::Invalid(_))
         ));
     }
+
+    #[test]
+    fn stores_are_presets_and_the_pc_entry_is_not() {
+        let conn = db::open_in_memory().unwrap();
+        let names: Vec<String> = platforms(&conn).unwrap().into_iter().map(|p| p.name).collect();
+        assert!(names.contains(&"Steam".to_string()));
+        assert!(names.contains(&"Epic Games Store".to_string()));
+        assert!(!names.contains(&"PC".to_string()));
+    }
 }

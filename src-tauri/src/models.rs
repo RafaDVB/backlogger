@@ -202,3 +202,18 @@ pub struct GamePlatform {
     pub name: String,
     pub state: PlatformState,
 }
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewGame {
+    pub id: i64,
+    pub title: String,
+    pub release_year: Option<i64>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DeletePreview {
+    pub total: i64,
+    pub first: Vec<PreviewGame>,
+    pub blocked: Vec<String>,
+}

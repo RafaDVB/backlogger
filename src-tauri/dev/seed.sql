@@ -7,12 +7,12 @@ INSERT INTO games (title, release_year, status, outcome, rating_id, shelf_slot, 
   ('Stardew Valley',  2016, 'owned',      'dropped',   6,    NULL, '');
 
 WITH m(title, platform) AS (VALUES
-  ('Hollow Knight', 'PC'), ('Hollow Knight', 'Nintendo Switch'),
-  ('Celeste', 'PC'), ('Celeste', 'Nintendo Switch'),
-  ('Hades', 'PC'), ('Hades', 'Nintendo Switch'),
-  ('Disco Elysium', 'PC'),
-  ('Baba Is You', 'PC'), ('Baba Is You', 'Nintendo Switch'),
-  ('Stardew Valley', 'PC'))
+  ('Hollow Knight', 'Steam'), ('Hollow Knight', 'Nintendo Switch'),
+  ('Celeste', 'Steam'), ('Celeste', 'Nintendo Switch'),
+  ('Hades', 'Steam'), ('Hades', 'Nintendo Switch'),
+  ('Disco Elysium', 'Steam'),
+  ('Baba Is You', 'Steam'), ('Baba Is You', 'Nintendo Switch'),
+  ('Stardew Valley', 'Steam'))
 INSERT INTO game_platforms (game_id, platform_id)
 SELECT g.id, p.id FROM m
 JOIN games g ON g.title = m.title

@@ -63,3 +63,15 @@ export interface GameEdit {
   platforms: PlatformLink[];
   genreIds: number[];
 }
+
+export interface PreviewGame {
+  id: number;
+  title: string;
+  releaseYear: number | null;
+}
+
+export interface DeletePreview {
+  total: number;
+  first: PreviewGame[];
+  blocked: string[];
+}

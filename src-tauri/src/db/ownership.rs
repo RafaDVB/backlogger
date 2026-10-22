@@ -129,9 +129,9 @@ mod tests {
         games::get(conn, game_id).unwrap().status
     }
 
-    // Seed: 1 Hollow Knight (shelf slot 1, owned on PC and Switch), 2 Celeste (outcome set,
-    // owned on PC and Switch), 4 Disco Elysium (interested, PC), 5 Baba Is You (interested,
-    // PC and Switch).
+    // Seed: 1 Hollow Knight (shelf slot 1, owned on Steam and Switch), 2 Celeste (outcome set,
+    // owned on Steam and Switch), 4 Disco Elysium (interested, Steam), 5 Baba Is You (interested,
+    // Steam and Switch).
 
     #[test]
     fn the_seed_data_follows_the_ownership_rule() {
@@ -161,19 +161,19 @@ mod tests {
             state_of(&conn, 5, "Nintendo Switch"),
             Some(PlatformState::Owned)
         );
-        assert_eq!(state_of(&conn, 5, "PC"), Some(PlatformState::Wanted));
+        assert_eq!(state_of(&conn, 5, "Steam"), Some(PlatformState::Wanted));
     }
 
     #[test]
     fn owned_on_several_platforms() {
         let mut conn = seeded();
-        let pc = platform_id(&conn, "PC");
+        let steam = platform_id(&conn, "Steam");
         let switch = platform_id(&conn, "Nintendo Switch");
 
         set_platform_state(&mut conn, 4, switch, Some(PlatformState::Owned)).unwrap();
-        set_platform_state(&mut conn, 4, pc, Some(PlatformState::Owned)).unwrap();
+        set_platform_state(&mut conn, 4, steam, Some(PlatformState::Owned)).unwrap();
 
-        assert_eq!(state_of(&conn, 4, "PC"), Some(PlatformState::Owned));
+        assert_eq!(state_of(&conn, 4, "Steam"), Some(PlatformState::Owned));
         assert_eq!(
             state_of(&conn, 4, "Nintendo Switch"),
             Some(PlatformState::Owned)
@@ -183,12 +183,12 @@ mod tests {
     #[test]
     fn un_owning_the_last_owned_platform_returns_to_interested() {
         let mut conn = seeded();
-        let pc = platform_id(&conn, "PC");
+        let steam = platform_id(&conn, "Steam");
         let new = NewGame {
             title: "Tunic".into(),
             release_year: None,
             platforms: vec![PlatformLink {
-                platform_id: pc,
+                platform_id: steam,
                 state: PlatformState::Owned,
             }],
             genre_ids: vec![],
@@ -196,7 +196,7 @@ mod tests {
         let id = games::create(&mut conn, &new).unwrap();
         assert_eq!(status_of(&conn, id), Status::Owned);
 
-        set_platform_state(&mut conn, id, pc, Some(PlatformState::Wanted)).unwrap();
+        set_platform_state(&mut conn, id, steam, Some(PlatformState::Wanted)).unwrap();
 
         assert_eq!(status_of(&conn, id), Status::Interested);
     }
@@ -204,11 +204,11 @@ mod tests {
     #[test]
     fn the_last_owned_platform_of_a_shelved_game_cannot_be_un_owned() {
         let mut conn = seeded();
-        let pc = platform_id(&conn, "PC");
+        let steam = platform_id(&conn, "Steam");
         let switch = platform_id(&conn, "Nintendo Switch");
 
         // Hollow Knight is on the shelf. Losing one platform is fine...
-        set_platform_state(&mut conn, 1, pc, Some(PlatformState::Wanted)).unwrap();
+        set_platform_state(&mut conn, 1, steam, Some(PlatformState::Wanted)).unwrap();
         // ...but not the last one.
         let result = set_platform_state(&mut conn, 1, switch, Some(PlatformState::Wanted));
 
@@ -223,24 +223,24 @@ mod tests {
     #[test]
     fn unlinking_counts_as_un_owning() {
         let mut conn = seeded();
-        let pc = platform_id(&conn, "PC");
+        let steam = platform_id(&conn, "Steam");
         let switch = platform_id(&conn, "Nintendo Switch");
 
         set_platform_state(&mut conn, 1, switch, None).unwrap();
-        let result = set_platform_state(&mut conn, 1, pc, None);
+        let result = set_platform_state(&mut conn, 1, steam, None);
 
         assert!(matches!(result, Err(AppError::StillOnShelf)));
-        assert_eq!(state_of(&conn, 1, "PC"), Some(PlatformState::Owned));
+        assert_eq!(state_of(&conn, 1, "Steam"), Some(PlatformState::Owned));
     }
 
     #[test]
     fn the_last_owned_platform_of_a_game_with_an_outcome_cannot_be_un_owned() {
         let mut conn = seeded();
-        let pc = platform_id(&conn, "PC");
+        let steam = platform_id(&conn, "Steam");
         let switch = platform_id(&conn, "Nintendo Switch");
 
         // Celeste has the outcome "completed".
-        set_platform_state(&mut conn, 2, pc, Some(PlatformState::Wanted)).unwrap();
+        set_platform_state(&mut conn, 2, steam, Some(PlatformState::Wanted)).unwrap();
         let result = set_platform_state(&mut conn, 2, switch, Some(PlatformState::Wanted));
 
         assert!(matches!(result, Err(AppError::HasOutcome)));
@@ -259,7 +259,7 @@ mod tests {
             state_of(&conn, 5, "Nintendo Switch"),
             Some(PlatformState::Owned)
         );
-        assert_eq!(state_of(&conn, 5, "PC"), Some(PlatformState::Wanted));
+        assert_eq!(state_of(&conn, 5, "Steam"), Some(PlatformState::Wanted));
     }
 
     #[test]
@@ -267,7 +267,7 @@ mod tests {
         let mut conn = seeded();
         mark_owned(&mut conn, 4, None).unwrap();
         assert_eq!(status_of(&conn, 4), Status::Owned);
-        assert_eq!(state_of(&conn, 4, "PC"), Some(PlatformState::Owned));
+        assert_eq!(state_of(&conn, 4, "Steam"), Some(PlatformState::Owned));
     }
 
     #[test]
@@ -294,12 +294,12 @@ mod tests {
     #[test]
     fn a_new_game_gets_its_status_from_its_platforms() {
         let mut conn = seeded();
-        let pc = platform_id(&conn, "PC");
+        let steam = platform_id(&conn, "Steam");
         let owned = NewGame {
             title: "A".into(),
             release_year: None,
             platforms: vec![PlatformLink {
-                platform_id: pc,
+                platform_id: steam,
                 state: PlatformState::Owned,
             }],
             genre_ids: vec![],
@@ -308,7 +308,7 @@ mod tests {
             title: "B".into(),
             release_year: None,
             platforms: vec![PlatformLink {
-                platform_id: pc,
+                platform_id: steam,
                 state: PlatformState::Wanted,
             }],
             genre_ids: vec![],

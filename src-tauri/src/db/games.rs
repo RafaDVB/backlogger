@@ -413,8 +413,8 @@ mod tests {
     #[test]
     fn creates_a_game_with_platforms_and_genres() {
         let mut conn = seeded();
-        let pc: i64 = conn
-            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| {
+        let steam: i64 = conn
+            .query_row("SELECT id FROM platforms WHERE name = 'Steam'", [], |r| {
                 r.get(0)
             })
             .unwrap();
@@ -422,7 +422,7 @@ mod tests {
             .query_row("SELECT id FROM genres WHERE name = 'RPG'", [], |r| r.get(0))
             .unwrap();
         let new = NewGame {
-            platforms: vec![link(pc, PlatformState::Wanted)],
+            platforms: vec![link(steam, PlatformState::Wanted)],
             genre_ids: vec![rpg],
             ..new_game("Elden Ring")
         };
@@ -452,15 +452,15 @@ mod tests {
     #[test]
     fn update_replaces_the_editable_fields_only() {
         let mut conn = seeded();
-        let pc: i64 = conn
-            .query_row("SELECT id FROM platforms WHERE name = 'PC'", [], |r| {
+        let steam: i64 = conn
+            .query_row("SELECT id FROM platforms WHERE name = 'Steam'", [], |r| {
                 r.get(0)
             })
             .unwrap();
         let edit = GameEdit {
             title: "Celeste (Edited)".into(),
             release_year: Some(2018),
-            platforms: vec![link(pc, PlatformState::Owned)],
+            platforms: vec![link(steam, PlatformState::Owned)],
             genre_ids: vec![],
         };
 
