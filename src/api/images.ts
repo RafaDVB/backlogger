@@ -16,3 +16,13 @@ export function deleteScreenshot(id: number): Promise<void> {
 export function setCover(gameId: number, sourcePath: string): Promise<GameDetail> {
   return invoke("set_cover", { gameId, sourcePath });
 }
+
+export function addScreenshotFromBytes(
+  gameId: number,
+  bytes: Uint8Array,
+  extension: string,
+): Promise<Screenshot> {
+  return invoke("add_screenshot_from_bytes", bytes, {
+    headers: { "x-game-id": String(gameId), "x-extension": extension },
+  });
+}

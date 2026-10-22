@@ -57,3 +57,33 @@ pub fn set_cover(
         }
     }
 }
+
+fn header(request: &tauri::ipc::Request<'_>, name: &str) -> AppResult<String> {
+    request
+        .headers()
+        .get(name)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string)
+        .ok_or_else(|| AppError::Invalid(format!("missing {name} header")))
+}
+
+#[tauri::command]
+pub fn add_screenshot_from_bytes(
+    state: State<'_, AppState>,
+    request: tauri::ipc::Request<'_>,
+) -> AppResult<Screenshot> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(AppError::Invalid("expected raw image data".into()));
+    };
+    let game_id: i64 = header(&request, "x-game-id")?
+        .parse()
+        .map_err(|_| AppError::Invalid("that game id isn't a number".into()))?;
+    let extension = header(&request, "x-extension")?;
+
+    let relative = images::import_bytes(&state.images_dir, Kind::Screenshot, &extension, bytes)?;
+    let conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    screenshots::add(&conn, game_id, &relative).map_err(|e| {
+        images::remove(&state.images_dir, &relative);
+        e
+    })
+}

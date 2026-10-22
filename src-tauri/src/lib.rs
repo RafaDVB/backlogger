@@ -52,7 +52,8 @@ pub fn run() {
             commands::images::get_images_dir,
             commands::images::add_screenshot,
             commands::images::delete_screenshot,
-            commands::images::set_cover
+            commands::images::set_cover,
+            commands::images::add_screenshot_from_bytes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
