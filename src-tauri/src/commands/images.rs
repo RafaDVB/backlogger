@@ -21,9 +21,8 @@ pub fn add_screenshot(
     let relative = images::import(&state.images_dir, Kind::Screenshot, Path::new(&source_path))?;
     let conn = state.db.lock().map_err(|_| AppError::Lock)?;
     // If the database refuses (say the game doesn't exist), don't leave the copy behind.
-    screenshots::add(&conn, game_id, &relative).map_err(|e| {
+    screenshots::add(&conn, game_id, &relative).inspect_err(|_| {
         images::remove(&state.images_dir, &relative);
-        e
     })
 }
 
