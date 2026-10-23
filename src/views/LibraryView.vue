@@ -55,7 +55,10 @@ function onDrop(event: DragEvent) {
           Interested ({{ library.interested.length }})
         </button>
       </nav>
-      <button class="add" @click="openAdd">+ Add game</button>
+      <div class="actions">
+        <button class="add" @click="openAdd">+ Add game</button>
+        <button class="add" @click="nav.openSettings()">Settings</button>
+      </div>
     </div>
 
     <p v-if="library.error" class="error">{{ library.error }}</p>
@@ -119,6 +122,11 @@ section.remove-zone {
 
 .empty {
   opacity: 0.7;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
 }
 
 .error {

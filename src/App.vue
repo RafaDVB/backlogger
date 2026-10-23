@@ -3,6 +3,7 @@ import ShelfSidebar from "./components/shelf/ShelfSidebar.vue";
 import { useNavStore } from "./stores/navigation";
 import GameDetailView from "./views/GameDetailView.vue";
 import LibraryView from "./views/LibraryView.vue";
+import SettingsView from "./views/SettingsView.vue";
 
 const nav = useNavStore();
 </script>
@@ -11,12 +12,13 @@ const nav = useNavStore();
   <div class="app">
     <ShelfSidebar />
     <main class="main">
-      <LibraryView v-show="nav.openGameId === null" />
+      <LibraryView v-show="nav.openGameId === null && !nav.settingsOpen" />
       <GameDetailView
         v-if="nav.openGameId !== null"
         :key="nav.openGameId"
         :game-id="nav.openGameId"
       />
+      <SettingsView v-if="nav.settingsOpen" />
     </main>
   </div>
 </template>

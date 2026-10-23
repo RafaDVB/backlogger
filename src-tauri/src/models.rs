@@ -217,3 +217,9 @@ pub struct DeletePreview {
     pub first: Vec<PreviewGame>,
     pub blocked: Vec<String>,
 }
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Settings {
+    pub rawg_api_key: Option<String>,
+}

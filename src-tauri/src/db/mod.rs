@@ -4,6 +4,7 @@ pub mod ownership;
 pub mod screenshots;
 pub mod shelf;
 pub mod list_edit;
+pub mod settings;
 
 use crate::error::AppResult;
 use rusqlite::Connection;
@@ -15,6 +16,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("../../migrations/0002-presets.sql"),
     include_str!("../../migrations/0003-platform_state.sql"),
     include_str!("../../migrations/0004-store_presets.sql"),
+    include_str!("../../migrations/0005-settings.sql"),
 ];
 
 pub fn open(path: &Path) -> AppResult<Connection> {

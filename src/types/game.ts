@@ -75,3 +75,7 @@ export interface DeletePreview {
   first: PreviewGame[];
   blocked: string[];
 }
+
+export interface Settings {
+  rawgApiKey: string | null;
+}
