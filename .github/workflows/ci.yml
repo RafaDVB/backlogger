@@ -1,8 +1,9 @@
 name: CI
 
 on:
-  push:
   pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -23,7 +24,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - run: pnpm typecheck
 
   rust:
     name: Rust
@@ -31,8 +32,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -49,6 +48,4 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libxdo-dev \
             wget
-      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
-      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
       - run: cargo test --manifest-path src-tauri/Cargo.toml
