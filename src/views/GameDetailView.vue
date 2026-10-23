@@ -11,6 +11,8 @@ import { useNavStore } from "../stores/navigation";
 import type { GameDetail, Outcome } from "../types/game";
 import * as imagesApi from "../api/images";
 import { usePasteImages } from "../composables/usePasteImages";
+import BaseButton from "../components/ui/BaseButton.vue";
+import BaseChip from "../components/ui/BaseChip.vue";
 
 const props = defineProps<{ gameId: number }>();
 
@@ -111,15 +113,15 @@ usePasteImages(async (images) => {
 <template>
     <section v-if="game" class="detail">
         <header class="top">
-            <button type="button" @click="nav.close()">← Library</button>
+            <BaseButton variant="quiet" @click="nav.close()">← Library</BaseButton>
             <h2>
                 {{ game.title }}<span v-if="game.releaseYear"> ({{ game.releaseYear }})</span>
             </h2>
             <div class="spacer" />
-            <button v-if="game.status === 'interested'" type="button" @click="markOwned">
+            <BaseButton v-if="game.status === 'interested'" variant="primary" @click="markOwned">
                 Mark as owned
-            </button>
-            <button type="button" @click="editing = true">Edit</button>
+            </BaseButton>
+            <BaseButton @click="editing = true">Edit</BaseButton>
         </header>
 
         <p v-if="error" class="error">{{ error }}</p>
@@ -136,10 +138,10 @@ usePasteImages(async (images) => {
                     <img :src="resolveImage(shot.path) ?? undefined" alt="" />
                 </button>
             </div>
-            <p class="hint">Tip: copy an image and press Ctrl+V on this screen to add it as a screenshot.</p>
-            <button v-if="current && current.id !== featuredId" type="button" @click="setFeatured">
+            <BaseButton v-if="current && current.id !== featuredId" size="sm" @click="setFeatured">
                 Use as featured screenshot
-            </button>
+            </BaseButton>
+            <p class="hint">Tip: copy an image and press Ctrl+V on this screen to add it as a screenshot.</p>
         </div>
 
         <div class="block">
@@ -160,25 +162,22 @@ usePasteImages(async (images) => {
         <div class="block">
             <h3>Rating</h3>
             <div class="chips">
-                <button type="button" class="chip" :class="{ active: game.rating === null }" @click="setRating(null)">
-                    Unrated
-                </button>
-                <button v-for="rating in lists.ratings" :key="rating.id"
-                    :style="rating.color ? { borderLeft: '6px solid ' + rating.color } : undefined" type="button"
-                    class="chip" :class="{ active: game.rating?.id === rating.id }" @click="setRating(rating.id)">
+                <BaseChip :active="game.rating === null" @click="setRating(null)">Unrated</BaseChip>
+                <BaseChip v-for="rating in lists.ratings" :key="rating.id" :active="game.rating?.id === rating.id"
+                    :style="rating.color ? { borderLeft: '6px solid ' + rating.color } : undefined"
+                    @click="setRating(rating.id)">
                     {{ rating.label }}
-                </button>
+                </BaseChip>
             </div>
         </div>
 
         <div class="block">
             <h3>Outcome</h3>
             <div class="chips">
-                <button v-for="option in outcomes" :key="option.label" type="button" class="chip"
-                    :class="{ active: game.outcome === option.value }" :disabled="!isOwned"
-                    @click="setOutcome(option.value)">
+                <BaseChip v-for="option in outcomes" :key="option.label" :active="game.outcome === option.value"
+                    :disabled="!isOwned" @click="setOutcome(option.value)">
                     {{ option.label }}
-                </button>
+                </BaseChip>
             </div>
             <p v-if="!isOwned" class="hint">Mark the game as owned to track whether you finished it.</p>
         </div>
@@ -201,8 +200,8 @@ usePasteImages(async (images) => {
 .top {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
 .top h2 {
@@ -213,40 +212,21 @@ usePasteImages(async (images) => {
     flex: 1;
 }
 
-button {
-    padding: 6px 14px;
-    border: 1px solid rgba(128, 128, 128, 0.5);
-    border-radius: 6px;
-    background: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-}
-
-button:hover:not(:disabled) {
-    background: rgba(128, 128, 128, 0.2);
-}
-
-button:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
-
 .gallery {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
 }
 
 .big {
     position: relative;
     width: min(720px, 100%);
     aspect-ratio: 16 / 9;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    background: rgba(128, 128, 128, 0.2);
+    background: var(--color-hover);
 }
 
 .big img {
@@ -259,35 +239,38 @@ button:disabled {
     display: grid;
     place-items: center;
     height: 100%;
-    opacity: 0.6;
+    color: var(--color-text-muted);
 }
 
 .badge {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    font-size: 12px;
+    top: var(--space-2);
+    left: var(--space-2);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--color-on-image-bg);
+    color: var(--color-on-image);
+    font-size: var(--font-size-sm);
 }
 
 .strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .thumb {
     padding: 0;
-    border-width: 2px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
     overflow: hidden;
     line-height: 0;
+    background: none;
+    cursor: pointer;
 }
 
 .thumb.selected {
-    border-color: seagreen;
+    border-color: var(--color-accent);
 }
 
 .thumb img {
@@ -297,57 +280,39 @@ button:disabled {
 }
 
 .block {
-    margin-bottom: 20px;
+    margin-bottom: var(--space-5);
 }
 
 .block h3 {
-    margin: 0 0 8px;
-    font-size: 15px;
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-md);
 }
 
 .chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-}
-
-.chip.active {
-    background: rgba(128, 128, 128, 0.3);
-    font-weight: 600;
-    border-color: seagreen;
+    gap: var(--space-2);
 }
 
 .tag {
     padding: 2px 10px;
-    border-radius: 999px;
-    background: rgba(128, 128, 128, 0.2);
-    font-size: 13px;
+    border-radius: var(--radius-pill);
+    background: var(--color-hover);
+    font-size: var(--font-size-sm);
 }
 
 .tag.genre {
-    background: rgba(46, 139, 87, 0.25);
+    background: var(--color-accent-soft);
 }
 
 textarea {
     width: 100%;
-    box-sizing: border-box;
-    padding: 8px;
-    border: 1px solid rgba(128, 128, 128, 0.5);
-    border-radius: 6px;
-    background: none;
-    color: inherit;
-    font: inherit;
     resize: vertical;
 }
 
-.save-state,
-.hint {
-    font-size: 13px;
+.save-state {
+    font-size: var(--font-size-sm);
     font-weight: normal;
-    opacity: 0.7;
-}
-
-.error {
-    color: crimson;
+    color: var(--color-text-muted);
 }
 </style>

@@ -7,6 +7,8 @@ import { useListsStore } from "../stores/lists";
 import { useNavStore } from "../stores/navigation";
 import { useSettingsStore } from "../stores/settings";
 import type { DeletePreview } from "../types/game";
+import BaseButton from "../components/ui/BaseButton.vue";
+import TabBar from "../components/ui/TabBar.vue";
 
 type Tab = "genres" | "platforms" | "ratings" | "rawg";
 type ListKind = "genre" | "platform" | "rating";
@@ -79,16 +81,11 @@ async function saveKey() {
 <template>
     <section>
         <header class="top">
-            <button type="button" @click="nav.closeSettings()">← Library</button>
+            <BaseButton variant="quiet" @click="nav.closeSettings()">← Library</BaseButton>
             <h2>Settings</h2>
         </header>
 
-        <nav class="tabs">
-            <button v-for="item in tabs" :key="item.id" type="button" :class="{ active: tab === item.id }"
-                @click="tab = item.id">
-                {{ item.label }}
-            </button>
-        </nav>
+        <TabBar v-model="tab" :tabs="tabs" class="tab-bar" />
 
         <p v-if="lists.error && !pending" class="error">{{ lists.error }}</p>
 
@@ -113,7 +110,7 @@ async function saveKey() {
             <div class="row">
                 <input v-model="keyDraft" :type="showKey ? 'text' : 'password'" placeholder="Paste your key" />
                 <label><input v-model="showKey" type="checkbox" /> Show</label>
-                <button type="button" @click="saveKey">Save</button>
+                <BaseButton variant="primary" @click="saveKey">Save</BaseButton>
                 <span class="hint">{{ keyStatus }}</span>
             </div>
             <p class="hint">To remove the key, empty the box and save.</p>
@@ -128,59 +125,27 @@ async function saveKey() {
 .top {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
 .top h2 {
     margin: 0;
 }
 
-.tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
+.tab-bar {
+    margin-bottom: var(--space-4);
 }
 
 .row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     flex-wrap: wrap;
-}
-
-button {
-    padding: 6px 14px;
-    border: 1px solid rgba(128, 128, 128, 0.5);
-    border-radius: 6px;
-    background: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-}
-
-.tabs button.active {
-    background: rgba(128, 128, 128, 0.25);
-    font-weight: 600;
 }
 
 input[type="text"],
 input[type="password"] {
     min-width: 280px;
-    padding: 5px 8px;
-    border: 1px solid rgba(128, 128, 128, 0.5);
-    border-radius: 6px;
-    background: none;
-    color: inherit;
-    font: inherit;
-}
-
-.hint {
-    opacity: 0.7;
-    font-size: 14px;
-}
-
-.error {
-    color: crimson;
 }
 </style>

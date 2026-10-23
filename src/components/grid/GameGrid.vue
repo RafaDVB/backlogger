@@ -8,13 +8,8 @@ defineEmits<{ select: [id: number]; markOwned: [id: number] }>();
 
 <template>
   <div class="grid">
-    <GameTile
-      v-for="game in games"
-      :key="game.id"
-      :game="game"
-      @select="$emit('select', $event)"
-      @mark-owned="$emit('markOwned', $event)"
-    />
+    <GameTile v-for="game in games" :key="game.id" :game="game" @select="$emit('select', $event)"
+      @mark-owned="$emit('markOwned', $event)" />
   </div>
 </template>
 
@@ -22,6 +17,6 @@ defineEmits<{ select: [id: number]; markOwned: [id: number] }>();
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 </style>

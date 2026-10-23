@@ -39,30 +39,15 @@ const label = computed(() =>
 </script>
 
 <template>
-  <article
-    class="tile"
-    :class="{ draggable: canDrag }"
-    :draggable="canDrag"
-    tabindex="0"
-    role="button"
-    @mouseenter="start"
-    @mouseleave="stop"
-    @click="emit('select', game.id)"
-    @keydown.enter="emit('select', game.id)"
-    @dragstart="onDragStart"
-    @dragend="endDrag"
-  >
+  <article class="tile" :class="{ draggable: canDrag }" :draggable="canDrag" tabindex="0" role="button"
+    @mouseenter="start" @mouseleave="stop" @click="emit('select', game.id)" @keydown.enter="emit('select', game.id)"
+    @dragstart="onDragStart" @dragend="endDrag">
     <div class="frame">
       <img v-if="current" :src="current" :alt="game.title" draggable="false" />
       <div v-else class="no-image">No image</div>
       <span v-if="game.shelfSlot" class="badge">On shelf</span>
       <span v-else-if="game.outcome" class="badge">{{ game.outcome }}</span>
-      <button
-        v-if="game.status === 'interested'"
-        class="own"
-        type="button"
-        @click.stop="emit('markOwned', game.id)"
-      >
+      <button v-if="game.status === 'interested'" class="own" type="button" @click.stop="emit('markOwned', game.id)">
         Mark as owned
       </button>
     </div>
@@ -74,59 +59,67 @@ const label = computed(() =>
 .tile {
   cursor: pointer;
 }
+
 .tile.draggable {
   cursor: grab;
 }
-.own {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  padding: 4px 10px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.75);
-  color: white;
-  font-size: 12px;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.tile:hover .own,
-.own:focus-visible {
-  opacity: 1;
-}
+
 .frame {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 8px;
-  background: rgba(128, 128, 128, 0.2);
+  border-radius: var(--radius-lg);
+  background: var(--color-hover);
 }
+
 .frame img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
+
 .no-image {
   display: grid;
   place-items: center;
   height: 100%;
-  opacity: 0.6;
+  color: var(--color-text-muted);
 }
+
 .badge {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  font-size: 12px;
+  top: var(--space-2);
+  left: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-on-image-bg);
+  color: var(--color-on-image);
+  font-size: var(--font-size-sm);
   text-transform: capitalize;
 }
+
+.own {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  padding: var(--space-1) 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-on-image-bg);
+  color: var(--color-on-image);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.tile:hover .own,
+.own:focus-visible {
+  opacity: 1;
+}
+
 .label {
-  margin-top: 6px;
-  font-size: 14px;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
 }
 </style>

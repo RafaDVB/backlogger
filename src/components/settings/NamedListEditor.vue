@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import BaseButton from "../ui/BaseButton.vue";
 
 interface Item {
   id: number;
@@ -54,26 +55,16 @@ async function saveMerge() {
 <template>
   <div>
     <div class="row add">
-      <input
-        v-model="newName"
-        type="text"
-        :placeholder="`New ${noun}…`"
-        @keydown.enter="add"
-      />
-      <button type="button" @click="add">Add</button>
+      <input v-model="newName" type="text" :placeholder="`New ${noun}…`" @keydown.enter="add" />
+      <BaseButton variant="primary" @click="add">Add</BaseButton>
     </div>
 
     <ul class="items">
       <li v-for="item in items" :key="item.id">
         <div v-if="editingId === item.id" class="row">
-          <input
-            v-model="editName"
-            type="text"
-            @keydown.enter="saveRename"
-            @keydown.esc="editingId = null"
-          />
-          <button type="button" @click="saveRename">Save</button>
-          <button type="button" @click="editingId = null">Cancel</button>
+          <input v-model="editName" type="text" @keydown.enter="saveRename" @keydown.esc="editingId = null" />
+          <BaseButton size="sm" variant="primary" @click="saveRename">Save</BaseButton>
+          <BaseButton size="sm" variant="quiet" @click="editingId = null">Cancel</BaseButton>
         </div>
 
         <div v-else-if="mergingId === item.id" class="row">
@@ -84,17 +75,17 @@ async function saveMerge() {
               {{ choice.name }}
             </option>
           </select>
-          <button type="button" :disabled="mergeTarget === null" @click="saveMerge">
+          <BaseButton size="sm" variant="primary" :disabled="mergeTarget === null" @click="saveMerge">
             Merge
-          </button>
-          <button type="button" @click="mergingId = null">Cancel</button>
+          </BaseButton>
+          <BaseButton size="sm" variant="quiet" @click="mergingId = null">Cancel</BaseButton>
         </div>
 
         <div v-else class="row">
           <span class="name">{{ item.name }}</span>
-          <button type="button" @click="startRename(item)">Rename</button>
-          <button v-if="mergeItem" type="button" @click="startMerge(item)">Merge…</button>
-          <button type="button" class="danger" @click="requestDelete(item.id)">Delete…</button>
+          <BaseButton size="sm" @click="startRename(item)">Rename</BaseButton>
+          <BaseButton v-if="mergeItem" size="sm" @click="startMerge(item)">Merge…</BaseButton>
+          <BaseButton size="sm" variant="danger" @click="requestDelete(item.id)">Delete…</BaseButton>
         </div>
       </li>
     </ul>
@@ -106,52 +97,27 @@ async function saveMerge() {
 .row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
+
 .add {
-  margin-bottom: 14px;
+  margin-bottom: var(--space-4);
 }
+
 .items {
   list-style: none;
   margin: 0;
   padding: 0;
 }
+
 .items li {
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
 }
+
 .name {
   flex: 1;
   min-width: 140px;
-}
-input[type="text"],
-select {
-  padding: 5px 8px;
-  border: 1px solid rgba(128, 128, 128, 0.5);
-  border-radius: 6px;
-  background: none;
-  color: inherit;
-  font: inherit;
-}
-button {
-  padding: 4px 12px;
-  border: 1px solid rgba(128, 128, 128, 0.5);
-  border-radius: 6px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-.danger {
-  border-color: crimson;
-  color: crimson;
-}
-.hint {
-  opacity: 0.7;
 }
 </style>

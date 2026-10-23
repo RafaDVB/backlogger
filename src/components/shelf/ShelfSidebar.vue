@@ -17,9 +17,4 @@ onMounted(() => shelf.load());
   </aside>
 </template>
 
-<style scoped>
-.error {
-  color: crimson;
-  font-size: 14px;
-}
-</style>
+<style scoped></style>

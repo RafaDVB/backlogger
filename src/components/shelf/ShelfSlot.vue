@@ -83,25 +83,25 @@ async function onDrop(event: DragEvent) {
 <style scoped>
 .slot {
   position: relative;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
   min-height: 72px;
-  border: 2px dashed rgba(128, 128, 128, 0.35);
-  border-radius: 8px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .slot.accept {
-  border-color: seagreen;
+  border-color: var(--color-accent);
 }
 
 .slot.refuse {
-  border-color: crimson;
+  border-color: var(--color-danger);
 }
 
 .game {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px;
+  gap: var(--space-3);
+  padding: var(--space-2);
   cursor: grab;
 }
 
@@ -110,21 +110,21 @@ async function onDrop(event: DragEvent) {
   width: 54px;
   height: 72px;
   object-fit: cover;
-  border-radius: 4px;
-  background: rgba(128, 128, 128, 0.25);
+  border-radius: var(--radius-sm);
+  background: var(--color-hover);
   flex-shrink: 0;
 }
 
 .title {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
 }
 
 .remove {
   border: none;
   background: none;
   color: inherit;
-  font-size: 20px;
+  font-size: var(--font-size-lg);
   line-height: 1;
   cursor: pointer;
   opacity: 0.6;
@@ -138,8 +138,8 @@ async function onDrop(event: DragEvent) {
   display: grid;
   place-items: center;
   height: 72px;
-  opacity: 0.5;
-  font-size: 14px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
 .hint {
@@ -147,10 +147,10 @@ async function onDrop(event: DragEvent) {
   inset: 0;
   display: grid;
   place-items: center;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.75);
-  color: white;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-on-image-bg);
+  color: var(--color-on-image);
+  font-size: var(--font-size-sm);
   pointer-events: none;
 }
 </style>

@@ -8,6 +8,8 @@ import { pickImages } from "../../lib/pickImages";
 import { useLibraryStore } from "../../stores/library";
 import { useListsStore } from "../../stores/lists";
 import { useShelfStore } from "../../stores/shelf";
+import BaseButton from "../ui/BaseButton.vue";
+import BaseDialog from "../ui/BaseDialog.vue";
 import type { GameDetail, Screenshot, Status, PlatformLink, PlatformState } from "../../types/game";
 
 const props = defineProps<{ gameId: number | null; defaultStatus: Status }>();
@@ -181,10 +183,9 @@ function platformLinks(): PlatformLink[] {
 </script>
 
 <template>
-  <div class="overlay">
-    <form class="panel" @submit.prevent="save">
-      <h3>{{ heading }}</h3>
-
+  <!-- dismissible is off: Escape or a stray click would throw away what you typed -->
+  <BaseDialog :title="heading" width="560px" :dismissible="false">
+    <form @submit.prevent="save">
       <p v-if="loading">Loading…</p>
 
       <template v-else>
@@ -218,7 +219,7 @@ function platformLinks(): PlatformLink[] {
           <div class="row">
             <input v-model="newPlatform" type="text" placeholder="Another platform…"
               @keydown.enter.prevent="addPlatform" />
-            <button type="button" @click="addPlatform">Add</button>
+            <BaseButton size="sm" @click="addPlatform">Add</BaseButton>
           </div>
         </fieldset>
 
@@ -237,7 +238,7 @@ function platformLinks(): PlatformLink[] {
           <div class="row">
             <img v-if="original?.coverPath && !coverFile" class="thumb cover"
               :src="resolveImage(original.coverPath) ?? undefined" alt="" />
-            <button type="button" @click="chooseCover">Choose cover…</button>
+            <BaseButton size="sm" @click="chooseCover">Choose cover…</BaseButton>
             <span v-if="coverFile" class="staged">{{ fileName(coverFile) }}</span>
           </div>
         </div>
@@ -259,93 +260,70 @@ function platformLinks(): PlatformLink[] {
               <button type="button" class="x" @click="newScreenshots.splice(index, 1)">×</button>
             </li>
           </ul>
-          <button type="button" @click="addScreenshots">Add screenshots…</button>
+          <div>
+            <BaseButton size="sm" @click="addScreenshots">Add screenshots…</BaseButton>
+          </div>
         </div>
 
         <p v-if="error" class="error">{{ error }}</p>
 
         <div class="actions">
-          <button type="submit" :disabled="saving">{{ saving ? "Saving…" : "Save" }}</button>
-          <button type="button" :disabled="saving" @click="emit('close')">Cancel</button>
+          <BaseButton type="submit" variant="primary" :disabled="saving">
+            {{ saving ? "Saving…" : "Save" }}
+          </BaseButton>
+          <BaseButton :disabled="saving" @click="emit('close')">Cancel</BaseButton>
 
           <template v-if="editingId !== null">
-            <button v-if="!confirmingDelete" type="button" class="danger" @click="confirmingDelete = true">
+            <BaseButton v-if="!confirmingDelete" variant="danger" @click="confirmingDelete = true">
               Delete…
-            </button>
+            </BaseButton>
             <template v-else>
               <span>Delete this game and its images?</span>
-              <button type="button" class="danger" :disabled="saving" @click="removeGame">
+              <BaseButton variant="danger" :disabled="saving" @click="removeGame">
                 Yes, delete
-              </button>
-              <button type="button" @click="confirmingDelete = false">No</button>
+              </BaseButton>
+              <BaseButton @click="confirmingDelete = false">No</BaseButton>
             </template>
           </template>
         </div>
       </template>
     </form>
-  </div>
+  </BaseDialog>
 </template>
 
 <style scoped>
-.overlay {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 10;
-}
-
-.panel {
-  width: min(560px, 92vw);
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 20px;
-  border-radius: 10px;
-  background: Canvas;
-  color: CanvasText;
-}
-
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin: 0 0 14px;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
   padding: 0;
   border: none;
 }
 
 .field>span,
 .field>legend {
+  padding: 0;
   font-weight: 600;
-  font-size: 14px;
-}
-
-.field input[type="text"] {
-  padding: 6px 8px;
-  border: 1px solid rgba(128, 128, 128, 0.5);
-  border-radius: 6px;
-  background: none;
-  color: inherit;
-  font: inherit;
+  font-size: var(--font-size-sm);
 }
 
 .row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .checks {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 14px;
+  gap: var(--space-1) var(--space-4);
 }
 
 .thumbs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .thumb-wrap {
@@ -360,8 +338,8 @@ function platformLinks(): PlatformLink[] {
   width: 96px;
   height: 54px;
   object-fit: cover;
-  border-radius: 4px;
-  background: rgba(128, 128, 128, 0.25);
+  border-radius: var(--radius-sm);
+  background: var(--color-hover);
 }
 
 .thumb.cover {
@@ -382,55 +360,28 @@ function platformLinks(): PlatformLink[] {
   top: 0;
   right: 0;
   padding: 0 5px;
-  border-radius: 0 4px 0 4px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
+  border-radius: 0 var(--radius-sm) 0 var(--radius-sm);
+  background: var(--color-on-image-bg);
+  color: var(--color-on-image);
+  opacity: 1;
 }
 
 .staged-list {
   margin: 0;
-  padding-left: 18px;
-  font-size: 14px;
+  padding-left: var(--space-4);
+  font-size: var(--font-size-sm);
 }
 
 .staged {
-  font-size: 14px;
-  opacity: 0.8;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-button {
-  padding: 6px 14px;
-  border: 1px solid rgba(128, 128, 128, 0.5);
-  border-radius: 6px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-button:hover:not(:disabled) {
-  background: rgba(128, 128, 128, 0.2);
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.danger {
-  border-color: crimson;
-  color: crimson;
-}
-
-.error {
-  color: crimson;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
 </style>
