@@ -55,6 +55,13 @@ export const useListsStore = defineStore("lists", () => {
     run(() => listsApi.mergePlatform(fromId, toId), true);
   const deletePlatform = (id: number) => run(() => listsApi.deletePlatform(id), true);
 
+  const createRating = (label: string, color: string | null) =>
+    run(() => listsApi.createRating(label, color));
+  const updateRating = (id: number, label: string, color: string | null) =>
+    run(() => listsApi.updateRating(id, label, color));
+  const reorderRatings = (ids: number[]) => run(() => listsApi.reorderRatings(ids));
+  const deleteRating = (id: number) => run(() => listsApi.deleteRating(id));
+
   async function previewDelete(
     kind: "genre" | "rating" | "platform",
     id: number,
@@ -85,6 +92,10 @@ export const useListsStore = defineStore("lists", () => {
     renamePlatform,
     mergePlatform,
     deletePlatform,
+    createRating,
+    updateRating,
+    reorderRatings,
+    deleteRating,
     previewDelete,
   };
 });

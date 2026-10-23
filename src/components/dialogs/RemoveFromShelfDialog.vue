@@ -30,11 +30,9 @@ onMounted(() => lists.loadRatings());
       <template v-else>
         <h3>How would you rate {{ game.title }}?</h3>
         <div class="buttons ratings">
-          <button
-            v-for="rating in lists.ratings"
-            :key="rating.id"
-            @click="shelf.confirmRemoval({ kind: 'finished', ratingId: rating.id })"
-          >
+          <button v-for="rating in lists.ratings" :key="rating.id"
+            :style="rating.color ? { borderLeft: '6px solid ' + rating.color } : undefined" type="button" class="chip"
+            @click="shelf.confirmRemoval({ kind: 'finished', ratingId: rating.id })">
             {{ rating.label }}
           </button>
         </div>
@@ -56,6 +54,7 @@ onMounted(() => lists.loadRatings());
   background: rgba(0, 0, 0, 0.5);
   z-index: 10;
 }
+
 .panel {
   width: min(420px, 90vw);
   padding: 20px;
@@ -63,12 +62,14 @@ onMounted(() => lists.loadRatings());
   background: Canvas;
   color: CanvasText;
 }
+
 .buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 }
+
 .buttons button {
   padding: 6px 14px;
   border: 1px solid rgba(128, 128, 128, 0.5);
@@ -78,9 +79,11 @@ onMounted(() => lists.loadRatings());
   font: inherit;
   cursor: pointer;
 }
+
 .buttons button:hover {
   background: rgba(128, 128, 128, 0.2);
 }
+
 .quiet {
   opacity: 0.7;
 }

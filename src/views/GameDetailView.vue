@@ -163,8 +163,9 @@ usePasteImages(async (images) => {
                 <button type="button" class="chip" :class="{ active: game.rating === null }" @click="setRating(null)">
                     Unrated
                 </button>
-                <button v-for="rating in lists.ratings" :key="rating.id" type="button" class="chip"
-                    :class="{ active: game.rating?.id === rating.id }" @click="setRating(rating.id)">
+                <button v-for="rating in lists.ratings" :key="rating.id"
+                    :style="rating.color ? { borderLeft: '6px solid ' + rating.color } : undefined" type="button"
+                    class="chip" :class="{ active: game.rating?.id === rating.id }" @click="setRating(rating.id)">
                     {{ rating.label }}
                 </button>
             </div>
