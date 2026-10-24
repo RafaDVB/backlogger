@@ -30,6 +30,7 @@ pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary
                 cover_path: row.get(6)?,
                 featured_path: row.get(7)?,
                 screenshot_paths: Vec::new(),
+                platforms: Vec::new(),
             })
         },
     )?;
@@ -47,6 +48,31 @@ pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary
     for game in &mut games {
         game.screenshot_paths = shots.remove(&game.id).unwrap_or_default();
     }
+
+    let mut links: HashMap<i64, Vec<GamePlatform>> = HashMap::new();
+    let mut platform_stmt = conn.prepare(
+        "SELECT gp.game_id, p.id, p.name, gp.state
+         FROM game_platforms gp JOIN platforms p ON p.id = gp.platform_id
+         ORDER BY gp.game_id, gp.state, p.name COLLATE NOCASE",
+    )?;
+    let platform_rows = platform_stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, i64>(0)?,
+            GamePlatform {
+                id: row.get(1)?,
+                name: row.get(2)?,
+                state: row.get(3)?,
+            },
+        ))
+    })?;
+    for item in platform_rows {
+        let (game_id, platform) = item?;
+        links.entry(game_id).or_default().push(platform);
+    }
+    for game in &mut games {
+        game.platforms = links.remove(&game.id).unwrap_or_default();
+    }
+
     Ok(games)
 }
 
@@ -641,5 +667,28 @@ mod tests {
             set_notes(&conn, 999, "x"),
             Err(AppError::NotFound)
         ));
+    }
+
+    #[test]
+    fn summaries_carry_their_platforms_owned_first() {
+        let mut conn = seeded();
+        let switch: i64 = conn
+            .query_row(
+                "SELECT id FROM platforms WHERE name = 'Nintendo Switch'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        // Baba Is You is wanted on Steam and on Switch; own it on Switch.
+        ownership::set_platform_state(&mut conn, 5, switch, Some(PlatformState::Owned)).unwrap();
+
+        let all = list(&conn, &GameFilter::default()).unwrap();
+        let baba = all.iter().find(|g| g.title == "Baba Is You").unwrap();
+
+        assert_eq!(baba.platforms.len(), 2);
+        assert_eq!(baba.platforms[0].name, "Nintendo Switch");
+        assert_eq!(baba.platforms[0].state, PlatformState::Owned);
+        assert_eq!(baba.platforms[1].name, "Steam");
+        assert_eq!(baba.platforms[1].state, PlatformState::Wanted);
     }
 }

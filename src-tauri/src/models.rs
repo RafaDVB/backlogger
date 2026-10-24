@@ -93,6 +93,7 @@ pub struct GameSummary {
     pub cover_path: Option<String>,
     pub featured_path: Option<String>,
     pub screenshot_paths: Vec<String>,
+    pub platforms: Vec<GamePlatform>,
 }
 
 #[derive(Debug, Serialize)]

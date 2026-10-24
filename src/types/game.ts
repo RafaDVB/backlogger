@@ -23,6 +23,7 @@ export interface GameSummary {
   coverPath: string | null;
   featuredPath: string | null;
   screenshotPaths: string[];
+  platforms: GamePlatform[];
 }
 
 export interface Rating { id: number; label: string; sortOrder: number; color: string | null }

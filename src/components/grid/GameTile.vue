@@ -4,12 +4,17 @@ import { useDragDrop } from "../../composables/useDragDrop";
 import { useHoverCycle } from "../../composables/useHoverCycle";
 import { resolveImage } from "../../lib/images";
 import type { GameSummary } from "../../types/game";
+import PlatformTag from "../ui/PlatformTag.vue";
 
 const props = defineProps<{ game: GameSummary }>();
 const emit = defineEmits<{ select: [id: number]; markOwned: [id: number] }>();
 
 const { startDrag, endDrag } = useDragDrop();
 const canDrag = computed(() => props.game.shelfSlot === null);
+
+const MAX_PLATFORMS = 3;
+const shownPlatforms = computed(() => props.game.platforms.slice(0, MAX_PLATFORMS));
+const hiddenCount = computed(() => props.game.platforms.length - MAX_PLATFORMS);
 
 function onDragStart(event: DragEvent) {
   startDrag(event, {
@@ -52,6 +57,11 @@ const label = computed(() =>
       </button>
     </div>
     <div class="label">{{ label }}</div>
+    <div v-if="game.platforms.length" class="platforms">
+      <PlatformTag v-for="platform in shownPlatforms" :key="platform.id" :name="platform.name"
+        :state="platform.state" />
+      <span v-if="hiddenCount > 0" class="more">+{{ hiddenCount }}</span>
+    </div>
   </article>
 </template>
 
@@ -121,5 +131,18 @@ const label = computed(() =>
 .label {
   margin-top: var(--space-1);
   font-size: var(--font-size-sm);
+}
+
+.platforms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.more {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 </style>

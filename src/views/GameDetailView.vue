@@ -13,6 +13,7 @@ import * as imagesApi from "../api/images";
 import { usePasteImages } from "../composables/usePasteImages";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseChip from "../components/ui/BaseChip.vue";
+import PlatformTag from "../components/ui/PlatformTag.vue";
 
 const props = defineProps<{ gameId: number }>();
 
@@ -150,9 +151,8 @@ usePasteImages(async (images) => {
                 <span v-if="game.shelfSlot"> · On the shelf (slot {{ game.shelfSlot }})</span>
             </p>
             <div class="chips">
-                <span v-for="platform in game.platforms" :key="platform.id" class="tag">
-                    {{ platform.name }}
-                </span>
+                <PlatformTag v-for="platform in game.platforms" :key="platform.id" :name="platform.name"
+                    :state="platform.state" />
                 <span v-for="genre in game.genres" :key="genre.id" class="tag genre">
                     {{ genre.name }}
                 </span>
