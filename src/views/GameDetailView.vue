@@ -8,12 +8,14 @@ import { resolveImage } from "../lib/images";
 import { useLibraryStore } from "../stores/library";
 import { useListsStore } from "../stores/lists";
 import { useNavStore } from "../stores/navigation";
-import type { GameDetail, Outcome } from "../types/game";
+import type { GameDetail, Outcome, PlatformState } from "../types/game";
 import * as imagesApi from "../api/images";
 import { usePasteImages } from "../composables/usePasteImages";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseChip from "../components/ui/BaseChip.vue";
-import PlatformTag from "../components/ui/PlatformTag.vue";
+/* import PlatformTag from "../components/ui/PlatformTag.vue"; */
+import MarkOwnedDialog from "../components/dialogs/MarkOwnedDialog.vue";
+import PlatformEditor from "../components/detail/PlatformEditor.vue";
 
 const props = defineProps<{ gameId: number }>();
 
@@ -66,19 +68,33 @@ async function load() {
     }
 }
 
-onMounted(() => Promise.all([lists.loadRatings(), load()]));
+onMounted(() => Promise.all([lists.loadAll(), load()]));
 
-async function change(action: () => Promise<GameDetail>) {
+async function change(action: () => Promise<GameDetail>): Promise<boolean> {
     error.value = null;
     try {
         game.value = await action();
         await library.load();
+        return true;
     } catch (e) {
         error.value = describeError(e);
+        return false;
     }
 }
 
-const markOwned = () => change(() => gamesApi.markOwned(props.gameId));
+const markingOwned = ref(false);
+
+async function confirmMarkOwned(platformId: number) {
+    if (await change(() => gamesApi.markOwned(props.gameId, platformId))) markingOwned.value = false;
+}
+
+const setPlatform = (platformId: number, state: PlatformState | null) =>
+    change(() => gamesApi.setPlatformState(props.gameId, platformId, state));
+
+const availablePlatforms = computed(() =>
+    lists.platforms.filter((p) => !game.value?.platforms.some((g) => g.id === p.id)),
+);
+
 const setRating = (id: number | null) => change(() => gamesApi.setRating(props.gameId, id));
 const setOutcome = (outcome: Outcome | null) =>
     change(() => gamesApi.setOutcome(props.gameId, outcome));
@@ -119,7 +135,7 @@ usePasteImages(async (images) => {
                 {{ game.title }}<span v-if="game.releaseYear"> ({{ game.releaseYear }})</span>
             </h2>
             <div class="spacer" />
-            <BaseButton v-if="game.status === 'interested'" variant="primary" @click="markOwned">
+            <BaseButton v-if="game.status === 'interested'" variant="primary" @click="markingOwned = true">
                 Mark as owned
             </BaseButton>
             <BaseButton @click="editing = true">Edit</BaseButton>
@@ -150,9 +166,8 @@ usePasteImages(async (images) => {
                 {{ isOwned ? "Owned" : "Interested" }}
                 <span v-if="game.shelfSlot"> · On the shelf (slot {{ game.shelfSlot }})</span>
             </p>
+            <PlatformEditor :platforms="game.platforms" :available="availablePlatforms" @set="setPlatform" />
             <div class="chips">
-                <PlatformTag v-for="platform in game.platforms" :key="platform.id" :name="platform.name"
-                    :state="platform.state" />
                 <span v-for="genre in game.genres" :key="genre.id" class="tag genre">
                     {{ genre.name }}
                 </span>
@@ -189,6 +204,8 @@ usePasteImages(async (images) => {
             <textarea v-model="notes" rows="8" placeholder="Where you left off, passwords, thoughts…" />
         </div>
 
+        <MarkOwnedDialog v-if="markingOwned" :title="game.title" :linked="game.platforms" :error="error"
+            @confirm="confirmMarkOwned" @cancel="markingOwned = false" />
         <GameFormDialog v-if="editing" :game-id="gameId" :default-status="game.status" @close="onFormClosed" />
     </section>
 

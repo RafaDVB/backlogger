@@ -8,7 +8,8 @@ import { isLeaving, useDragDrop } from "../composables/useDragDrop";
 import { useLibraryStore } from "../stores/library";
 import { useNavStore } from "../stores/navigation";
 import { useShelfStore } from "../stores/shelf";
-import type { Status } from "../types/game";
+import MarkOwnedDialog from "../components/dialogs/MarkOwnedDialog.vue";
+import type { Status, GameSummary } from "../types/game";
 
 const library = useLibraryStore();
 const shelf = useShelfStore();
@@ -26,6 +27,20 @@ onMounted(() => library.load());
 
 const adding = ref(false);
 const openAdd = () => (adding.value = true);
+const markOwnedTarget = ref<GameSummary | null>(null);
+
+function askMarkOwned(id: number) {
+  const game = library.games.find((g) => g.id === id);
+  if (!game) return;
+  library.error = null;
+  markOwnedTarget.value = game;
+}
+
+async function confirmMarkOwned(platformId: number) {
+  const game = markOwnedTarget.value;
+  if (!game) return;
+  if (await library.markOwned(game.id, platformId)) markOwnedTarget.value = null;
+}
 
 const removeZoneActive = ref(false);
 const acceptsRemoval = computed(() => dragging.value?.source === "shelf");
@@ -67,11 +82,13 @@ function onDrop(event: DragEvent) {
       <p>No games yet.</p>
       <BaseButton variant="primary" @click="openAdd">Add your first game</BaseButton>
     </div>
-    <p v-else-if="shown.length === 0" class="hint">Nothing in this tab yet.</p>
+    <p v-if="library.error && !markOwnedTarget" class="error">{{ library.error }}</p>
 
-    <GameGrid v-else :games="shown" @select="nav.open($event)" @mark-owned="library.markOwned($event)" />
+    <GameGrid v-else :games="shown" @select="nav.open($event)" @mark-owned="askMarkOwned($event)" />
 
     <GameFormDialog v-if="adding" :game-id="null" :default-status="tab" @close="adding = false" />
+    <MarkOwnedDialog v-if="markOwnedTarget" :title="markOwnedTarget.title" :linked="markOwnedTarget.platforms"
+      :error="library.error" @confirm="confirmMarkOwned" @cancel="markOwnedTarget = null" />
   </section>
 </template>
 

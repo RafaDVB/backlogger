@@ -24,12 +24,15 @@ export const useLibraryStore = defineStore("library", () => {
     }
   }
 
-  async function markOwned(id: number) {
+  async function markOwned(id: number, platformId: number | null = null): Promise<boolean> {
+    error.value = null;
     try {
-      await gamesApi.markOwned(id);
+      await gamesApi.markOwned(id, platformId);
       await load();
+      return true;
     } catch (e) {
       error.value = describeError(e);
+      return false;
     }
   }
 

@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import type { PlatformState } from "../../types/game";
 
-const props = defineProps<{ name: string; state: PlatformState }>();
+const props = defineProps<{ name: string; state: PlatformState; hint?: string }>();
 
 const label = computed(() =>
     props.state === "owned" ? `Owned on ${props.name}` : `Wanted on ${props.name}`,
@@ -10,7 +10,7 @@ const label = computed(() =>
 </script>
 
 <template>
-    <span class="tag" :class="state" :title="label" :aria-label="label">{{ name }}</span>
+    <span class="tag" :class="state" :title="hint ?? label" :aria-label="label">{{ name }}</span>
 </template>
 
 <style scoped>
