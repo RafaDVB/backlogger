@@ -2,7 +2,11 @@
 import type { GamePlatform, Platform, PlatformState } from "../../types/game";
 import PlatformTag from "../ui/PlatformTag.vue";
 
-defineProps<{ platforms: GamePlatform[]; available: Platform[] }>();
+const props = defineProps<{
+    platforms: GamePlatform[];
+    available: Platform[];
+    newState?: PlatformState;
+}>();
 const emit = defineEmits<{ set: [platformId: number, state: PlatformState | null] }>();
 
 function hint(platform: GamePlatform): string {
@@ -15,7 +19,7 @@ function onPick(event: Event) {
     const select = event.target as HTMLSelectElement;
     const id = Number(select.value);
     select.value = "";
-    if (id) emit("set", id, "wanted");
+    if (id) emit("set", id, props.newState ?? "wanted");
 }
 </script>
 

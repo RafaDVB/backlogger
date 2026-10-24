@@ -8,9 +8,17 @@ import { pickImages } from "../../lib/pickImages";
 import { useLibraryStore } from "../../stores/library";
 import { useListsStore } from "../../stores/lists";
 import { useShelfStore } from "../../stores/shelf";
+import type {
+  GameDetail,
+  GamePlatform,
+  PlatformLink,
+  PlatformState,
+  Screenshot,
+  Status,
+} from "../../types/game";
+import PlatformEditor from "../detail/PlatformEditor.vue";
 import BaseButton from "../ui/BaseButton.vue";
 import BaseDialog from "../ui/BaseDialog.vue";
-import type { GameDetail, Screenshot, Status, PlatformLink, PlatformState } from "../../types/game";
 
 const props = defineProps<{ gameId: number | null; defaultStatus: Status }>();
 const emit = defineEmits<{ close: [] }>();
@@ -24,8 +32,7 @@ const original = ref<GameDetail | null>(null);
 
 const title = ref("");
 const yearText = ref("");
-const status = ref<Status>(props.defaultStatus);
-const platformIds = ref<number[]>([]);
+const links = ref<PlatformLink[]>([]);
 const genreIds = ref<number[]>([]);
 const newPlatform = ref("");
 
@@ -41,6 +48,24 @@ const confirmingDelete = ref(false);
 
 const heading = computed(() => (editingId.value === null ? "Add a game" : "Edit game"));
 
+const linkedPlatforms = computed<GamePlatform[]>(() =>
+  links.value.map((link) => ({
+    id: link.platformId,
+    name: lists.platforms.find((p) => p.id === link.platformId)?.name ?? "?",
+    state: link.state,
+  })),
+);
+const availablePlatforms = computed(() =>
+  lists.platforms.filter((p) => !links.value.some((l) => l.platformId === p.id)),
+);
+const derivedStatus = computed(() =>
+  links.value.some((link) => link.state === "owned") ? "Owned" : "Interested",
+);
+
+const newLinkState = computed<PlatformState>(() =>
+  editingId.value === null && props.defaultStatus === "owned" ? "owned" : "wanted",
+);
+
 onMounted(async () => {
   try {
     await lists.loadAll();
@@ -49,8 +74,7 @@ onMounted(async () => {
       original.value = game;
       title.value = game.title;
       yearText.value = game.releaseYear === null ? "" : String(game.releaseYear);
-      status.value = game.status;
-      platformIds.value = game.platforms.map((p) => p.id);
+      links.value = game.platforms.map((p) => ({ platformId: p.id, state: p.state }));
       genreIds.value = game.genres.map((g) => g.id);
       existingScreenshots.value = game.screenshots;
     }
@@ -65,12 +89,25 @@ function fileName(path: string): string {
   return path.split(/[\\/]/).pop() ?? path;
 }
 
-async function addPlatform() {
+function setLink(platformId: number, state: PlatformState | null) {
+  const index = links.value.findIndex((link) => link.platformId === platformId);
+  if (state === null) {
+    if (index !== -1) links.value.splice(index, 1);
+  } else if (index === -1) {
+    links.value.push({ platformId, state });
+  } else {
+    links.value[index].state = state;
+  }
+}
+
+async function createPlatform() {
   const name = newPlatform.value.trim();
   if (!name) return;
   try {
     const platform = await lists.addPlatform(name);
-    if (!platformIds.value.includes(platform.id)) platformIds.value.push(platform.id);
+    if (!links.value.some((link) => link.platformId === platform.id)) {
+      setLink(platform.id, newLinkState.value);
+    }
     newPlatform.value = "";
   } catch (e) {
     error.value = describeError(e);
@@ -104,10 +141,6 @@ async function save() {
     return;
   }
   const releaseYear = yearInput === "" ? null : Number(yearInput);
-  if (editingId.value === null && status.value === "owned" && platformIds.value.length === 0) {
-    error.value = "Pick the platform you own it on.";
-    return;
-  }
 
   saving.value = true;
   try {
@@ -116,7 +149,7 @@ async function save() {
       const created = await gamesApi.createGame({
         title: title.value,
         releaseYear,
-        platforms: platformLinks(),
+        platforms: links.value,
         genreIds: genreIds.value,
       });
       id = created.id;
@@ -125,7 +158,7 @@ async function save() {
       await gamesApi.updateGame(id, {
         title: title.value,
         releaseYear,
-        platforms: platformLinks(),
+        platforms: links.value,
         genreIds: genreIds.value,
       });
     }
@@ -149,7 +182,7 @@ async function save() {
     emit("close");
   } catch (e) {
     error.value = describeError(e);
-    await library.load();
+    await library.load(); // the game may already exist even though a later step failed
   } finally {
     saving.value = false;
   }
@@ -169,21 +202,9 @@ async function removeGame() {
     saving.value = false;
   }
 }
-
-function platformLinks(): PlatformLink[] {
-  const existing = new Map<number, PlatformState>(
-    (original.value?.platforms ?? []).map((p): [number, PlatformState] => [p.id, p.state]),
-  );
-  const fallback: PlatformState = status.value === "owned" ? "owned" : "wanted";
-  return platformIds.value.map((id) => ({
-    platformId: id,
-    state: existing.get(id) ?? fallback,
-  }));
-}
 </script>
 
 <template>
-  <!-- dismissible is off: Escape or a stray click would throw away what you typed -->
   <BaseDialog :title="heading" width="560px" :dismissible="false">
     <form @submit.prevent="save">
       <p v-if="loading">Loading…</p>
@@ -200,28 +221,20 @@ function platformLinks(): PlatformLink[] {
         </label>
 
         <div class="field">
-          <span>Status</span>
-          <div v-if="editingId === null" class="row">
-            <label><input v-model="status" type="radio" value="interested" /> Interested</label>
-            <label><input v-model="status" type="radio" value="owned" /> Owned</label>
-          </div>
-          <div v-else>{{ status === "owned" ? "Owned" : "Interested" }}</div>
-        </div>
-
-        <fieldset class="field">
-          <legend>Platforms</legend>
-          <div class="checks">
-            <label v-for="platform in lists.platforms" :key="platform.id">
-              <input v-model="platformIds" type="checkbox" :value="platform.id" />
-              {{ platform.name }}
-            </label>
-          </div>
+          <span>Platforms</span>
+          <PlatformEditor :platforms="linkedPlatforms" :available="availablePlatforms" :new-state="newLinkState"
+            @set="setLink" />
           <div class="row">
-            <input v-model="newPlatform" type="text" placeholder="Another platform…"
-              @keydown.enter.prevent="addPlatform" />
-            <BaseButton size="sm" @click="addPlatform">Add</BaseButton>
+            <input v-model="newPlatform" type="text" placeholder="A platform that isn't listed…"
+              @keydown.enter.prevent="createPlatform" />
+            <BaseButton size="sm" @click="createPlatform">Create</BaseButton>
           </div>
-        </fieldset>
+          <p class="hint">
+            Status: <strong>{{ derivedStatus }}</strong>. Click a platform to switch it between
+            owned (solid) and wanted (dashed). A game is Owned when you own it on at least one
+            platform.
+          </p>
+        </div>
 
         <fieldset class="field">
           <legend>Genres</legend>
