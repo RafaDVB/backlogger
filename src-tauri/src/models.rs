@@ -94,6 +94,8 @@ pub struct GameSummary {
     pub featured_path: Option<String>,
     pub screenshot_paths: Vec<String>,
     pub platforms: Vec<GamePlatform>,
+    pub rating_id: Option<i64>,
+    pub genre_ids: Vec<i64>,
 }
 
 #[derive(Debug, Serialize)]

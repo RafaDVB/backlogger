@@ -68,6 +68,8 @@ pub fn run() {
             commands::images::set_cover,
             commands::images::add_screenshot_from_bytes,
             commands::settings::get_settings,
+            commands::settings::get_ui_state,
+            commands::settings::set_ui_state,
             commands::settings::set_rawg_api_key,
         ])
         .run(tauri::generate_context!())

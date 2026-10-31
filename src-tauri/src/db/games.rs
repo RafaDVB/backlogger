@@ -11,7 +11,8 @@ pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary
                   (SELECT s.path FROM screenshots s WHERE s.id = g.featured_screenshot_id),
                   (SELECT s.path FROM screenshots s WHERE s.game_id = g.id
                    ORDER BY s.sort_order, s.id LIMIT 1)
-                )
+                ),
+                g.rating_id
          FROM games g
          WHERE (?1 IS NULL OR g.status = ?1)
            AND (?2 IS NULL OR (g.shelf_slot IS NOT NULL) = ?2)
@@ -31,6 +32,8 @@ pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary
                 featured_path: row.get(7)?,
                 screenshot_paths: Vec::new(),
                 platforms: Vec::new(),
+                rating_id: row.get(8)?,
+                genre_ids: Vec::new(),
             })
         },
     )?;
@@ -73,6 +76,18 @@ pub fn list(conn: &Connection, filter: &GameFilter) -> AppResult<Vec<GameSummary
         game.platforms = links.remove(&game.id).unwrap_or_default();
     }
 
+    let mut genre_links: HashMap<i64, Vec<i64>> = HashMap::new();
+    let mut genre_stmt =
+        conn.prepare("SELECT game_id, genre_id FROM game_genres ORDER BY game_id, genre_id")?;
+    let genre_rows =
+        genre_stmt.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?)))?;
+    for item in genre_rows {
+        let (game_id, genre_id) = item?;
+        genre_links.entry(game_id).or_default().push(genre_id);
+    }
+    for game in &mut games {
+        game.genre_ids = genre_links.remove(&game.id).unwrap_or_default();
+    }
     Ok(games)
 }
 
@@ -690,5 +705,23 @@ mod tests {
         assert_eq!(baba.platforms[0].state, PlatformState::Owned);
         assert_eq!(baba.platforms[1].name, "Steam");
         assert_eq!(baba.platforms[1].state, PlatformState::Wanted);
+    }
+
+    #[test]
+    fn summaries_carry_genre_ids_and_the_rating_id() {
+        let conn = seeded();
+        let platformer: i64 = conn
+            .query_row("SELECT id FROM genres WHERE name = 'Platformer'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+
+        let all = list(&conn, &GameFilter::default()).unwrap();
+
+        let celeste = all.iter().find(|g| g.title == "Celeste").unwrap();
+        assert_eq!(celeste.genre_ids, vec![platformer]);
+        assert!(celeste.rating_id.is_some()); // rated 9 in the seed data
+        let disco = all.iter().find(|g| g.title == "Disco Elysium").unwrap();
+        assert_eq!(disco.rating_id, None);
     }
 }

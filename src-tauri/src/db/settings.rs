@@ -1,12 +1,15 @@
 use crate::error::AppResult;
 use crate::models::Settings;
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{Connection, OptionalExtension, params};
 
 pub const RAWG_API_KEY: &str = "rawg_api_key";
+pub const UI_STATE: &str = "ui_state";
 
 pub fn get(conn: &Connection, key: &str) -> AppResult<Option<String>> {
     Ok(conn
-        .query_row("SELECT value FROM settings WHERE key = ?1", [key], |row| row.get(0))
+        .query_row("SELECT value FROM settings WHERE key = ?1", [key], |row| {
+            row.get(0)
+        })
         .optional()?)
 }
 
@@ -25,7 +28,9 @@ pub fn set(conn: &Connection, key: &str, value: &str) -> AppResult<()> {
 }
 
 pub fn all(conn: &Connection) -> AppResult<Settings> {
-    Ok(Settings { rawg_api_key: get(conn, RAWG_API_KEY)? })
+    Ok(Settings {
+        rawg_api_key: get(conn, RAWG_API_KEY)?,
+    })
 }
 
 #[cfg(test)]
@@ -51,5 +56,18 @@ mod tests {
         set(&conn, RAWG_API_KEY, "abc").unwrap();
         set(&conn, RAWG_API_KEY, "   ").unwrap();
         assert_eq!(get(&conn, RAWG_API_KEY).unwrap(), None);
+    }
+
+    #[test]
+    fn the_saved_view_round_trips() {
+        let conn = db::open_in_memory().unwrap();
+        assert_eq!(get(&conn, UI_STATE).unwrap(), None);
+
+        set(&conn, UI_STATE, r#"{"tab":"owned"}"#).unwrap();
+
+        assert_eq!(
+            get(&conn, UI_STATE).unwrap().as_deref(),
+            Some(r#"{"tab":"owned"}"#)
+        );
     }
 }

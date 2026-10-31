@@ -1,32 +1,80 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import GameFormDialog from "../components/dialogs/GameFormDialog.vue";
+import MarkOwnedDialog from "../components/dialogs/MarkOwnedDialog.vue";
 import GameGrid from "../components/grid/GameGrid.vue";
+import FilterBar from "../components/library/FilterBar.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
 import TabBar from "../components/ui/TabBar.vue";
 import { isLeaving, useDragDrop } from "../composables/useDragDrop";
+import { applyFilters, hasActiveFilters, sortGames } from "../lib/gameFilters";
+import type { Tab } from "../lib/viewState";
 import { useLibraryStore } from "../stores/library";
+import { useListsStore } from "../stores/lists";
 import { useNavStore } from "../stores/navigation";
 import { useShelfStore } from "../stores/shelf";
-import MarkOwnedDialog from "../components/dialogs/MarkOwnedDialog.vue";
-import type { Status, GameSummary } from "../types/game";
+import { useViewStore } from "../stores/view";
+import type { GameSummary } from "../types/game";
 
 const library = useLibraryStore();
-const shelf = useShelfStore();
+const lists = useListsStore();
 const nav = useNavStore();
+const shelf = useShelfStore();
+const view = useViewStore();
 const { dragging, endDrag } = useDragDrop();
 
-const tab = ref<Status>("owned");
-const shown = computed(() => (tab.value === "owned" ? library.owned : library.interested));
-const tabs = computed<{ id: Status; label: string }[]>(() => [
-  { id: "owned", label: `Owned (${library.owned.length})` },
-  { id: "interested", label: `Interested (${library.interested.length})` },
+// ---- what is shown: filter first, then pick the tab, then sort ----
+
+const filtered = computed(() => applyFilters(library.games, view.filters));
+
+const counts = computed(() => ({
+  all: filtered.value.length,
+  owned: filtered.value.filter((g) => g.status === "owned").length,
+  interested: filtered.value.filter((g) => g.status === "interested").length,
+}));
+
+const tabs = computed<{ id: Tab; label: string }[]>(() => [
+  { id: "all", label: `All (${counts.value.all})` },
+  { id: "owned", label: `Owned (${counts.value.owned})` },
+  { id: "interested", label: `Interested (${counts.value.interested})` },
 ]);
 
-onMounted(() => library.load());
+const shown = computed(() => {
+  const inTab =
+    view.tab === "all" ? filtered.value : filtered.value.filter((g) => g.status === view.tab);
+  return sortGames(inTab, view.sort);
+});
+
+// ---- loading, and keeping the saved filters honest ----
+
+const listsReady = ref(false);
+
+function pruneFilters() {
+  view.prune({
+    genres: lists.genres.map((g) => g.id),
+    platforms: lists.platforms.map((p) => p.id),
+    ratings: lists.ratings.map((r) => r.id),
+  });
+}
+
+onMounted(async () => {
+  await Promise.all([library.load(), lists.loadAll()]);
+  pruneFilters();
+  listsReady.value = true;
+});
+
+watch(
+  () => [lists.genres, lists.platforms, lists.ratings],
+  () => {
+    if (listsReady.value) pruneFilters();
+  },
+);
+
+// ---- adding a game, and marking one as owned ----
 
 const adding = ref(false);
 const openAdd = () => (adding.value = true);
+
 const markOwnedTarget = ref<GameSummary | null>(null);
 
 function askMarkOwned(id: number) {
@@ -41,6 +89,8 @@ async function confirmMarkOwned(platformId: number) {
   if (!game) return;
   if (await library.markOwned(game.id, platformId)) markOwnedTarget.value = null;
 }
+
+// ---- dropping a shelf game anywhere in the library asks to take it off the shelf ----
 
 const removeZoneActive = ref(false);
 const acceptsRemoval = computed(() => dragging.value?.source === "shelf");
@@ -68,25 +118,38 @@ function onDrop(event: DragEvent) {
 <template>
   <section :class="{ 'remove-zone': removeZoneActive }" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
     <div class="top">
-      <TabBar v-model="tab" :tabs="tabs" />
+      <TabBar v-model="view.tab" :tabs="tabs" />
       <div class="actions">
         <BaseButton variant="primary" @click="openAdd">+ Add game</BaseButton>
         <BaseButton @click="nav.openSettings()">Settings</BaseButton>
       </div>
     </div>
 
-    <p v-if="library.error" class="error">{{ library.error }}</p>
+    <FilterBar />
+
+    <p v-if="library.error && !markOwnedTarget" class="error">{{ library.error }}</p>
     <p v-if="removeZoneActive" class="zone-hint">Drop here to take this game off the shelf</p>
+    <p v-if="hasActiveFilters(view.filters) && library.games.length > 0" class="hint">
+      Showing {{ filtered.length }} of {{ library.games.length }} games
+    </p>
 
     <div v-if="!library.loading && library.games.length === 0" class="empty">
       <p>No games yet.</p>
       <BaseButton variant="primary" @click="openAdd">Add your first game</BaseButton>
     </div>
-    <p v-if="library.error && !markOwnedTarget" class="error">{{ library.error }}</p>
+    <div v-else-if="shown.length === 0" class="empty">
+      <p v-if="hasActiveFilters(view.filters)">No games match these filters.</p>
+      <p v-else>Nothing in this tab yet.</p>
+      <BaseButton v-if="hasActiveFilters(view.filters)" @click="view.clearFilters()">
+        Clear filters
+      </BaseButton>
+    </div>
 
     <GameGrid v-else :games="shown" @select="nav.open($event)" @mark-owned="askMarkOwned($event)" />
 
-    <GameFormDialog v-if="adding" :game-id="null" :default-status="tab" @close="adding = false" />
+    <GameFormDialog v-if="adding" :game-id="null" :default-status="view.tab === 'owned' ? 'owned' : 'interested'"
+      @close="adding = false" />
+
     <MarkOwnedDialog v-if="markOwnedTarget" :title="markOwnedTarget.title" :linked="markOwnedTarget.platforms"
       :error="library.error" @confirm="confirmMarkOwned" @cancel="markOwnedTarget = null" />
   </section>

@@ -24,6 +24,8 @@ export interface GameSummary {
   featuredPath: string | null;
   screenshotPaths: string[];
   platforms: GamePlatform[];
+  ratingId: number | null;
+  genreIds: number[];
 }
 
 export interface Rating { id: number; label: string; sortOrder: number; color: string | null }

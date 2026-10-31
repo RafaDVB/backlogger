@@ -8,3 +8,11 @@ export function getSettings(): Promise<Settings> {
 export function setRawgApiKey(key: string): Promise<Settings> {
     return invoke("set_rawg_api_key", { key });
 }
+
+export function getUiState(): Promise<string | null> {
+    return invoke("get_ui_state");
+}
+
+export function setUiState(json: string): Promise<void> {
+    return invoke("set_ui_state", { json });
+}
