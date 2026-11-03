@@ -70,6 +70,7 @@ const label = computed(() =>
   border-radius: var(--radius-md);
   background: var(--fill-1);
   cursor: pointer;
+  container-type: inline-size;
 }
 
 .tile.draggable {
@@ -89,7 +90,9 @@ const label = computed(() =>
 
 .frame {
   position: relative;
+  width: 100%;
   aspect-ratio: 16 / 9;
+  height: round(down, calc(100cqw * 9 / 16), 2px);
   overflow: hidden;
   border-bottom: 1px solid var(--edge-1);
   background: var(--fill-1);

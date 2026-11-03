@@ -17,6 +17,12 @@ withDefaults(
 
 <style scoped>
 .btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  white-space: nowrap;
   font: inherit;
   color: var(--color-text);
   background: transparent;
@@ -27,10 +33,12 @@ withDefaults(
 }
 
 .btn-md {
+  min-height: 30px;
   padding: 4px 12px;
 }
 
 .btn-sm {
+  min-height: 26px;
   padding: 2px 8px;
   font-size: var(--font-size-sm);
 }
@@ -72,5 +80,9 @@ withDefaults(
 .btn-quiet {
   border-color: transparent;
   color: var(--color-text-muted);
+}
+
+.btn-quiet :deep(.pixel-icon) {
+  opacity: 0.65;
 }
 </style>

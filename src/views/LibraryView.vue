@@ -153,7 +153,7 @@ function onDrop(event: DragEvent) {
       </BaseButton>
     </div>
 
-    <GameGrid v-else :games="shown" :style="{ '--tile': `${appearance.librarySize}px` }" @select="nav.open($event)"
+    <GameGrid v-else :games="shown" :tile="appearance.librarySize" @select="nav.open($event)"
       @mark-owned="askMarkOwned($event)" />
 
     <GameFormDialog v-if="adding" :game-id="null" :default-status="view.tab === 'owned' ? 'owned' : 'interested'"
@@ -178,6 +178,7 @@ section.remove-zone {
 
 .size {
   display: flex;
+  flex: none;
   align-items: center;
   gap: var(--space-2);
 }
@@ -197,6 +198,7 @@ section.remove-zone {
 
 .top {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-3);
@@ -205,6 +207,7 @@ section.remove-zone {
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
 }
 

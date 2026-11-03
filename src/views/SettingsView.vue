@@ -9,6 +9,7 @@ import { useNavStore } from "../stores/navigation";
 import { useSettingsStore } from "../stores/settings";
 import type { DeletePreview } from "../types/game";
 import BaseButton from "../components/ui/BaseButton.vue";
+import PixelIcon from "../components/ui/PixelIcon.vue";
 import TabBar from "../components/ui/TabBar.vue";
 
 type Tab = "genres" | "platforms" | "ratings" | "appearance" | "rawg";
@@ -83,7 +84,10 @@ async function saveKey() {
 <template>
     <section>
         <header class="top">
-            <BaseButton variant="quiet" @click="nav.closeSettings()">← Library</BaseButton>
+            <BaseButton variant="quiet" @click="nav.closeSettings()">
+                <PixelIcon name="arr-left" />
+                <span>Library</span>
+            </BaseButton>
             <h2>Settings</h2>
         </header>
 

@@ -127,8 +127,12 @@ async function onDrop(event: DragEvent) {
   top: 8px;
   left: 8px;
   z-index: 1;
-  min-width: 22px;
-  padding: 0 var(--space-1);
+  display: grid;
+  align-items: center;
+  justify-items: start;
+  width: 22px;
+  height: 22px;
+  padding-left: round(down, calc((20px - 1ch) / 2), 1px);
   border: 1px solid var(--edge-3);
   background: var(--fill-3);
   pointer-events: none;
@@ -174,11 +178,10 @@ async function onDrop(event: DragEvent) {
   right: 8px;
   display: grid;
   place-items: center;
-  width: 22px;
+  width: 23px;
   height: 22px;
   padding: 0;
   font: inherit;
-  line-height: 1;
   color: var(--color-text);
   background: var(--fill-1);
   border: 1px solid var(--edge-1);
@@ -205,6 +208,7 @@ async function onDrop(event: DragEvent) {
   inset: 0;
   display: grid;
   place-items: center;
+  padding-bottom: 1px;
   background: var(--color-on-image-bg);
   color: var(--color-on-image);
   pointer-events: none;

@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends string | number | null">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import BaseButton from "./BaseButton.vue";
+import PixelIcon from "./PixelIcon.vue";
 
 const props = defineProps<{
     label: string;
@@ -38,7 +39,8 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick));
 <template>
     <div ref="root" class="multi" @keydown.esc="open = false">
         <BaseButton size="sm" @click="open = !open">
-            {{ label }}{{ modelValue.length ? ` (${modelValue.length})` : "" }} ▾
+            <span>{{ label }}{{ modelValue.length ? ` (${modelValue.length})` : "" }}</span>
+            <PixelIcon name="tri-down" />
         </BaseButton>
 
         <div v-if="open" class="popup">

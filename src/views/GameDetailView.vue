@@ -13,6 +13,7 @@ import * as imagesApi from "../api/images";
 import { usePasteImages } from "../composables/usePasteImages";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseChip from "../components/ui/BaseChip.vue";
+import PixelIcon from "../components/ui/PixelIcon.vue";
 import MarkOwnedDialog from "../components/dialogs/MarkOwnedDialog.vue";
 import PlatformEditor from "../components/detail/PlatformEditor.vue";
 
@@ -129,7 +130,10 @@ usePasteImages(async (images) => {
 <template>
     <section v-if="game" class="detail">
         <header class="top">
-            <BaseButton variant="quiet" @click="nav.close()">← Library</BaseButton>
+            <BaseButton variant="quiet" @click="nav.close()">
+                <PixelIcon name="arr-left" />
+                <span>Library</span>
+            </BaseButton>
             <h2>
                 {{ game.title }}<span v-if="game.releaseYear"> ({{ game.releaseYear }})</span>
             </h2>
@@ -252,12 +256,14 @@ usePasteImages(async (images) => {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-3);
+    container-type: inline-size;
 }
 
 .big {
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
+    height: round(down, calc(100cqw * 9 / 16), 2px);
     overflow: hidden;
     border: 1px solid var(--edge-2);
     background: var(--fill-1);

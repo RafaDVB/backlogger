@@ -3,6 +3,7 @@ import { ref } from "vue";
 import type { Rating } from "../../types/game";
 import ColorField from "./ColorField.vue";
 import BaseButton from "../ui/BaseButton.vue";
+import PixelIcon from "../ui/PixelIcon.vue";
 
 const props = defineProps<{
     ratings: Rating[];
@@ -66,9 +67,13 @@ function move(index: number, offset: -1 | 1) {
                 </div>
 
                 <div v-else class="row">
-                    <BaseButton size="sm" :disabled="index === 0" @click="move(index, -1)">↑</BaseButton>
-                    <BaseButton size="sm" :disabled="index === ratings.length - 1" @click="move(index, 1)">
-                        ↓
+                    <BaseButton size="sm" :disabled="index === 0" title="Move up" aria-label="Move up"
+                        @click="move(index, -1)">
+                        <PixelIcon name="arr-up" />
+                    </BaseButton>
+                    <BaseButton size="sm" :disabled="index === ratings.length - 1" title="Move down"
+                        aria-label="Move down" @click="move(index, 1)">
+                        <PixelIcon name="arr-down" />
                     </BaseButton>
                     <span class="name">{{ rating.label }}</span>
                     <ColorField :model-value="rating.color" @update:model-value="setColor(rating, $event)" />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from "vue";
+import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 const props = withDefaults(
     defineProps<{
@@ -11,18 +11,55 @@ const props = withDefaults(
 );
 const emit = defineEmits<{ close: [] }>();
 
+const overlay = ref<HTMLElement | null>(null);
+const panel = ref<HTMLElement | null>(null);
+const panelLeft = ref("0px");
+const panelTop = ref("0px");
+const ready = ref(false);
+let observer: ResizeObserver | null = null;
+
+function center() {
+    const host = overlay.value;
+    const dialog = panel.value;
+    if (!host || !dialog) return;
+
+    const rect = dialog.getBoundingClientRect();
+    panelLeft.value = `${Math.round((host.clientWidth - rect.width) / 2)}px`;
+    panelTop.value = `${Math.round((host.clientHeight - rect.height) / 2)}px`;
+    ready.value = true;
+}
+
+function onResize() {
+    center();
+}
+
 function onKeydown(event: KeyboardEvent) {
     if (event.key === "Escape" && props.dismissible) emit("close");
 }
 
-onMounted(() => window.addEventListener("keydown", onKeydown));
-onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
+onMounted(() => {
+    window.addEventListener("keydown", onKeydown);
+    window.addEventListener("resize", onResize);
+    if (typeof ResizeObserver !== "undefined") {
+        observer = new ResizeObserver(center);
+        if (panel.value) observer.observe(panel.value);
+    }
+    void nextTick(center);
+    if (document.fonts) void document.fonts.ready.then(center);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener("keydown", onKeydown);
+    window.removeEventListener("resize", onResize);
+    observer?.disconnect();
+    observer = null;
+});
 </script>
 
 <template>
-    <div class="overlay" @click.self="dismissible && emit('close')">
-        <div class="panel" role="dialog" aria-modal="true" :aria-label="title"
-            :style="{ width: `min(${width}, 92vw)` }">
+    <div ref="overlay" class="overlay" @click.self="dismissible && emit('close')">
+        <div ref="panel" class="panel" :class="{ ready }" role="dialog" aria-modal="true" :aria-label="title"
+            :style="{ width: `min(${width}, 92vw)`, left: panelLeft, top: panelTop }">
             <h3 v-if="title" class="title">{{ title }}</h3>
             <slot />
             <div v-if="$slots.footer" class="footer">
@@ -36,13 +73,12 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .overlay {
     position: fixed;
     inset: 0;
-    display: grid;
-    place-items: center;
     background: var(--color-overlay);
     z-index: 10;
 }
 
 .panel {
+    position: absolute;
     max-height: 90vh;
     overflow-y: auto;
     padding: var(--space-5);
@@ -50,6 +86,11 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
     border-radius: var(--radius-lg);
     background: linear-gradient(180deg, var(--fill-3), var(--fill-2)), var(--wall-2);
     color: var(--color-text);
+    visibility: hidden;
+}
+
+.panel.ready {
+    visibility: visible;
 }
 
 .title {

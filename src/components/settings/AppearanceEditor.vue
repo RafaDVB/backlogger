@@ -54,6 +54,7 @@ const appearance = useAppearanceStore();
     padding: var(--space-2);
     font: inherit;
     color: var(--color-text);
+    text-align: left;
     background: transparent;
     border: 1px solid var(--edge-2);
     border-radius: var(--radius-md);

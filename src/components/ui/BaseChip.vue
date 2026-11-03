@@ -10,7 +10,12 @@ defineProps<{ active?: boolean }>();
 
 <style scoped>
 .chip {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
     padding: 2px var(--space-3);
+    white-space: nowrap;
     font: inherit;
     color: var(--color-text);
     background: transparent;

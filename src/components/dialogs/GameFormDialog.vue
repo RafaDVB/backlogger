@@ -19,6 +19,7 @@ import type {
 import PlatformEditor from "../detail/PlatformEditor.vue";
 import BaseButton from "../ui/BaseButton.vue";
 import BaseDialog from "../ui/BaseDialog.vue";
+import PixelIcon from "../ui/PixelIcon.vue";
 
 const props = defineProps<{ gameId: number | null; defaultStatus: Status }>();
 const emit = defineEmits<{ close: [] }>();
@@ -262,8 +263,12 @@ async function removeGame() {
             <div v-for="shot in existingScreenshots" :key="shot.id" class="thumb-wrap"
               :class="{ removed: removedScreenshotIds.includes(shot.id) }">
               <img class="thumb" :src="resolveImage(shot.path) ?? undefined" alt="" />
-              <button type="button" class="x" @click="toggleRemoved(shot.id)">
-                {{ removedScreenshotIds.includes(shot.id) ? "↺" : "×" }}
+              <button type="button" class="x"
+                :title="removedScreenshotIds.includes(shot.id) ? 'Restore screenshot' : 'Remove screenshot'"
+                :aria-label="removedScreenshotIds.includes(shot.id) ? 'Restore screenshot' : 'Remove screenshot'"
+                @click="toggleRemoved(shot.id)">
+                <PixelIcon v-if="removedScreenshotIds.includes(shot.id)" name="redo" :size="12" />
+                <template v-else>×</template>
               </button>
             </div>
           </div>
@@ -379,6 +384,9 @@ async function removeGame() {
 }
 
 .x {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
   padding: 0 var(--space-1);
   border: 1px solid transparent;
   background: none;

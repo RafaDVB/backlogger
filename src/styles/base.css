@@ -5,6 +5,10 @@
     font-display: block;
 }
 
+html {
+    font-size: 16px;
+}
+
 @font-face {
     font-family: "PixelOperator";
     src: url("../assets/fonts/PixelOperator-Bold.ttf") format("truetype");
@@ -36,6 +40,7 @@ body {
     font-family: var(--font-body);
     font-size: var(--font-size-md);
     font-synthesis: none;
+    line-height: 1.25;
 }
 
 h1,

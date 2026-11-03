@@ -16,7 +16,6 @@ const filled = computed(() => shelf.slots.filter((entry) => entry.game).length);
       <span>My Shelf</span>
       <span class="count">{{ filled }}/{{ shelf.slots.length }}</span>
     </h2>
-    <br>
     <p v-if="shelf.error" class="error">{{ shelf.error }}</p>
     <div class="slots">
       <ShelfSlot v-for="entry in shelf.slots" :key="entry.slot" :entry="entry" />
@@ -45,6 +44,7 @@ h2 {
 }
 
 .slots {
+  margin-top: var(--space-2);
   padding-bottom: 1px;
 }
 </style>

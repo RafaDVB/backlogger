@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends string | number">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import BaseButton from "./BaseButton.vue";
+import PixelIcon from "./PixelIcon.vue";
 
 const props = defineProps<{
     options: { value: T; label: string }[];
@@ -26,11 +27,11 @@ function place() {
     const above = rect.top - 8;
     const up = below < 160 && above > below;
     popupStyle.value = {
-        left: `${rect.left}px`,
-        minWidth: `${Math.max(rect.width, 140)}px`,
-        maxHeight: `${Math.max(80, Math.min(300, up ? above : below))}px`,
-        top: up ? "auto" : `${rect.bottom + 4}px`,
-        bottom: up ? `${window.innerHeight - rect.top + 4}px` : "auto",
+        left: `${Math.round(rect.left)}px`,
+        minWidth: `${Math.max(Math.round(rect.width), 140)}px`,
+        maxHeight: `${Math.max(80, Math.min(300, Math.round(up ? above : below)))}px`,
+        top: up ? "auto" : `${Math.round(rect.bottom) + 4}px`,
+        bottom: up ? `${Math.round(window.innerHeight - rect.top) + 4}px` : "auto",
     };
 }
 
@@ -149,7 +150,8 @@ onBeforeUnmount(() => {
     <div ref="root" class="select" @keydown="onKeydown">
         <BaseButton size="sm" :disabled="disabled" aria-haspopup="listbox" :aria-expanded="open"
             @click="open ? (open = false) : openMenu()">
-            {{ currentLabel }} ▾
+            <span>{{ currentLabel }}</span>
+            <PixelIcon name="tri-down" />
         </BaseButton>
 
         <Teleport to="body">

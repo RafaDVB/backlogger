@@ -102,7 +102,6 @@ async function saveMerge() {
   margin-bottom: var(--space-4);
 }
 
-/* The list is one tier-1 box; rows are separated by hairlines and rise a tier on hover. */
 .items {
   list-style: none;
   margin: 0;

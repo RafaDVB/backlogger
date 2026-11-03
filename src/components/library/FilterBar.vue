@@ -8,6 +8,7 @@ import BaseButton from "../ui/BaseButton.vue";
 import BaseChip from "../ui/BaseChip.vue";
 import BaseSelect from "../ui/BaseSelect.vue";
 import MultiSelect from "../ui/MultiSelect.vue";
+import PixelIcon from "../ui/PixelIcon.vue";
 
 const view = useViewStore();
 const lists = useListsStore();
@@ -45,11 +46,9 @@ function toggleOutcome(value: Outcome | "none") {
         : [...current, value];
 }
 
-const directionLabel = computed(() => {
-    const ascending = view.sort.direction === "asc";
-    if (view.sort.field === "year") return ascending ? "Oldest first" : "Newest first";
-    return ascending ? "A → Z" : "Z → A";
-});
+const yearDirectionLabel = computed(() =>
+    view.sort.direction === "asc" ? "Oldest first" : "Newest first",
+);
 
 function toggleDirection() {
     view.sort.direction = view.sort.direction === "asc" ? "desc" : "asc";
@@ -93,11 +92,17 @@ watch(
                 <BaseSelect v-model="view.sort.field" :options="sortOptions" />
             </span>
             <BaseButton size="sm" title="Change the sort direction" @click="toggleDirection">
-                {{ directionLabel }}
+                <template v-if="view.sort.field === 'title'">
+                    <span>{{ view.sort.direction === "asc" ? "A" : "Z" }}</span>
+                    <PixelIcon :name="view.sort.direction === 'asc' ? 'arr-right' : 'arr-left'" />
+                    <span>{{ view.sort.direction === "asc" ? "Z" : "A" }}</span>
+                </template>
+                <span v-else>{{ yearDirectionLabel }}</span>
             </BaseButton>
 
             <BaseButton size="sm" @click="panelOpen = !panelOpen">
-                Filters{{ activeCount ? ` (${activeCount})` : "" }} {{ panelOpen ? "▴" : "▾" }}
+                <span>Filters{{ activeCount ? ` (${activeCount})` : "" }}</span>
+                <PixelIcon :name="panelOpen ? 'tri-up' : 'tri-down'" />
             </BaseButton>
             <BaseButton v-if="activeCount" size="sm" variant="quiet" @click="view.clearFilters()">
                 Clear
