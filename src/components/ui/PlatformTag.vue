@@ -16,19 +16,16 @@ const label = computed(() =>
 <style scoped>
 .tag {
     display: inline-block;
-    padding: 1px 8px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-pill);
-    font-size: var(--font-size-sm);
+    padding: 0 var(--space-1);
+    border: 1px solid var(--edge-1);
+    border-radius: var(--radius-sm);
+    background: var(--fill-1);
+    color: var(--color-text-muted);
 }
 
 .owned {
-    background: var(--color-accent-soft);
-    border-color: var(--color-accent);
-}
-
-.wanted {
-    border-style: dashed;
-    color: var(--color-text-muted);
+    border-color: var(--edge-3);
+    background: var(--fill-3);
+    color: var(--color-text);
 }
 </style>

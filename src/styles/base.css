@@ -1,3 +1,26 @@
+@font-face {
+    font-family: "PixelOperator";
+    src: url("../assets/fonts/PixelOperator.ttf") format("truetype");
+    font-weight: 400;
+    font-display: block;
+}
+
+@font-face {
+    font-family: "PixelOperator";
+    src: url("../assets/fonts/PixelOperator-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+    }
+}
+
 *,
 *::before,
 *::after {
@@ -6,9 +29,29 @@
 
 body {
     margin: 0;
-    background: var(--color-bg);
+    background-color: var(--wall-1);
+    background-image: var(--gradient-wall);
+    background-attachment: fixed;
     color: var(--color-text);
     font-family: var(--font-body);
+    font-size: var(--font-size-md);
+    font-synthesis: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-weight: 400;
+}
+
+h1,
+h2 {
+    font-size: var(--font-size-lg);
+}
+
+h3,
+h4 {
     font-size: var(--font-size-md);
 }
 
@@ -16,20 +59,149 @@ input[type="text"],
 input[type="password"],
 select,
 textarea {
-    padding: 5px var(--space-2);
-    border: 1px solid var(--color-border);
+    padding: 3px var(--space-2);
+    border: 1px solid var(--edge-1);
     border-radius: var(--radius-md);
-    background: var(--color-bg);
+    background: var(--fill-1);
     color: inherit;
     font: inherit;
 }
 
-button:focus-visible,
-input:focus-visible,
+input[type="text"]:focus-visible,
+input[type="password"]:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 1px;
+    outline: none;
+    border-color: var(--edge-3);
+    background: var(--gradient-focus), var(--fill-1);
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    flex: none;
+    width: 10px;
+    height: 10px;
+    margin: 0;
+    padding: 2px;
+    border: 1px solid var(--edge-1);
+    border-radius: 0;
+    background: var(--fill-1);
+    cursor: pointer;
+}
+
+input[type="checkbox"]:hover {
+    border-color: var(--edge-3);
+}
+
+input[type="checkbox"]:checked {
+    border-color: var(--edge-3);
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b)), var(--fill-3);
+}
+
+input[type="checkbox"]:focus-visible {
+    outline: 1px solid var(--edge-3);
+    outline-offset: 2px;
+}
+
+input[type="range"] {
+    appearance: none;
+    flex: none;
+    width: 120px;
+    height: 16px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border: 1px solid var(--edge-1);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent-a) 50%, transparent), var(--fill-1));
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 10px;
+    height: 16px;
+    margin-top: -6px;
+    border: 1px solid var(--edge-3);
+    border-radius: 0;
+    background: var(--fill-3);
+}
+
+input[type="range"]:focus-visible {
+    outline: 1px solid var(--edge-3);
+    outline-offset: 2px;
+}
+
+button:focus-visible {
+    outline: 1px solid var(--edge-3);
+    outline-offset: 2px;
+}
+
+::selection {
+    background: color-mix(in srgb, var(--accent-a) 45%, transparent);
+    color: #ffffff;
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--fill-1);
+    border-left: 1px solid var(--edge-1);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--fill-2);
+    border: 1px solid var(--edge-2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--fill-3);
+    border-color: var(--edge-3);
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+.popup {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    left: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 220px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: var(--space-2);
+    border: 1px solid var(--edge-3);
+    border-radius: var(--radius-md);
+    background: var(--gradient-popup);
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
+}
+
+.popup-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 2px var(--space-1);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.popup-row:hover,
+.popup-row:focus-within,
+.popup-row.cursor {
+    border-color: var(--edge-3);
+    background: var(--gradient-focus);
 }
 
 .hint {

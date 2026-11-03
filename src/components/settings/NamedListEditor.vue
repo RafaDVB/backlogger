@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import BaseButton from "../ui/BaseButton.vue";
+import BaseSelect from "../ui/BaseSelect.vue";
 
 interface Item {
   id: number;
@@ -23,6 +24,7 @@ const mergingId = ref<number | null>(null);
 const mergeTarget = ref<number | null>(null);
 
 const mergeChoices = computed(() => props.items.filter((item) => item.id !== mergingId.value));
+const mergeOptions = computed(() => mergeChoices.value.map((item) => ({ value: item.id, label: item.name })));
 
 async function add() {
   if (!newName.value.trim()) return;
@@ -69,12 +71,7 @@ async function saveMerge() {
 
         <div v-else-if="mergingId === item.id" class="row">
           <span>Move every game from "{{ item.name }}" to</span>
-          <select v-model="mergeTarget">
-            <option :value="null" disabled>choose…</option>
-            <option v-for="choice in mergeChoices" :key="choice.id" :value="choice.id">
-              {{ choice.name }}
-            </option>
-          </select>
+          <BaseSelect v-model="mergeTarget" :options="mergeOptions" placeholder="choose…" />
           <BaseButton size="sm" variant="primary" :disabled="mergeTarget === null" @click="saveMerge">
             Merge
           </BaseButton>
@@ -105,15 +102,32 @@ async function saveMerge() {
   margin-bottom: var(--space-4);
 }
 
+/* The list is one tier-1 box; rows are separated by hairlines and rise a tier on hover. */
 .items {
   list-style: none;
   margin: 0;
   padding: 0;
+  border: 1px solid var(--edge-1);
+  background: var(--fill-1);
 }
 
 .items li {
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--edge-1);
+}
+
+.items li:last-child {
+  border-bottom: none;
+}
+
+.items li:hover {
+  background: var(--fill-2);
+}
+
+.row input[type="text"] {
+  flex: 1;
+  min-width: 160px;
+  max-width: 420px;
 }
 
 .name {

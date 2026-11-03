@@ -64,18 +64,24 @@ async function onDrop(event: DragEvent) {
 </script>
 
 <template>
-  <div class="slot" :class="{ accept: over && canDrop, refuse: over && refusal }" @dragover="onDragOver"
-    @dragleave="onDragLeave" @drop="onDrop">
+  <div class="slot" :class="{
+    full: entry.game,
+    available: canDrop && !over,
+    accept: over && canDrop,
+    refuse: over && refusal,
+  }" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
+    <span class="n">{{ entry.slot }}</span>
     <div v-if="entry.game" class="game" draggable="true" @click="nav.open(entry.game.id)" @dragstart="onDragStart"
       @dragend="endDrag">
       <img v-if="cover" :src="cover" :alt="entry.game.title" draggable="false" />
       <div v-else class="no-cover" />
       <span class="title">{{ entry.game.title }}</span>
-      <button class="remove" type="button" title="Take off the shelf" @click.stop="shelf.requestRemoval(entry.game.id)">
+      <button class="remove" type="button" title="Take off the shelf" aria-label="Take off the shelf"
+        @click.stop="shelf.requestRemoval(entry.game.id)">
         ×
       </button>
     </div>
-    <div v-else class="empty">Slot {{ entry.slot }}</div>
+    <div v-else class="empty">Empty</div>
     <div v-if="over && refusal" class="hint">{{ refusal }}</div>
   </div>
 </template>
@@ -83,63 +89,115 @@ async function onDrop(event: DragEvent) {
 <style scoped>
 .slot {
   position: relative;
-  margin-bottom: var(--space-3);
-  min-height: 72px;
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-lg);
+  margin-bottom: -1px;
+  border: 1px solid var(--edge-1);
+  background: var(--fill-1);
+}
+
+.slot.full {
+  border-color: var(--edge-2);
+  background: var(--fill-2);
+}
+
+.slot.full:hover:not(.accept):not(.refuse) {
+  z-index: 1;
+  border-color: var(--edge-3);
+  background: var(--fill-3);
+}
+
+.slot.available {
+  z-index: 1;
+  border-color: var(--edge-2);
 }
 
 .slot.accept {
-  border-color: var(--color-accent);
+  z-index: 1;
+  border-color: var(--edge-3);
+  background: var(--gradient-focus);
 }
 
 .slot.refuse {
+  z-index: 1;
   border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 25%, transparent);
+}
+
+.n {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  min-width: 22px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--edge-3);
+  background: var(--fill-3);
+  pointer-events: none;
+}
+
+.slot.full .n {
+  background: var(--color-on-image-bg);
+  color: var(--color-on-image);
 }
 
 .game {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: var(--space-3);
-  padding: var(--space-2);
   cursor: grab;
 }
 
 .game img,
 .no-cover {
-  width: 54px;
-  height: 72px;
+  display: block;
+  flex: none;
+  width: 96px;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
-  border-radius: var(--radius-sm);
-  background: var(--color-hover);
-  flex-shrink: 0;
+  border-right: 1px solid var(--edge-2);
+  background: var(--fill-1);
+}
+
+.no-cover {
+  background: repeating-linear-gradient(45deg, transparent 0 6px, var(--fill-1) 6px 12px);
 }
 
 .title {
   flex: 1;
-  font-size: var(--font-size-sm);
+  min-width: 0;
+  padding: var(--space-2) var(--space-5) var(--space-2) 0;
+  overflow-wrap: anywhere;
 }
 
 .remove {
-  border: none;
-  background: none;
-  color: inherit;
-  font-size: var(--font-size-lg);
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font: inherit;
   line-height: 1;
+  color: var(--color-text);
+  background: var(--fill-1);
+  border: 1px solid var(--edge-1);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  opacity: 0.6;
 }
 
-.remove:hover {
-  opacity: 1;
+.remove:hover,
+.remove:focus-visible {
+  background: var(--gradient-focus);
+  border-color: var(--edge-3);
 }
 
 .empty {
-  display: grid;
-  place-items: center;
-  height: 72px;
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding-left: 34px;
   color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
 }
 
 .hint {
@@ -147,10 +205,8 @@ async function onDrop(event: DragEvent) {
   inset: 0;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-md);
   background: var(--color-on-image-bg);
   color: var(--color-on-image);
-  font-size: var(--font-size-sm);
   pointer-events: none;
 }
 </style>

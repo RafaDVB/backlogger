@@ -41,10 +41,10 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick));
             {{ label }}{{ modelValue.length ? ` (${modelValue.length})` : "" }} ▾
         </BaseButton>
 
-        <div v-if="open" class="dropdown">
+        <div v-if="open" class="popup">
             <input v-if="options.length > 8" v-model="query" type="text" class="query"
                 :placeholder="`Search ${label.toLowerCase()}…`" />
-            <label v-for="option in shown" :key="String(option.value)" class="option">
+            <label v-for="option in shown" :key="String(option.value)" class="popup-row">
                 <input type="checkbox" :checked="modelValue.includes(option.value)" @change="toggle(option.value)" />
                 {{ option.label }}
             </label>
@@ -62,38 +62,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onDocumentClick));
     display: inline-block;
 }
 
-.dropdown {
-    position: absolute;
-    top: calc(100% + var(--space-1));
-    left: 0;
-    z-index: 5;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    min-width: 220px;
-    max-height: 300px;
-    overflow-y: auto;
-    padding: var(--space-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-raised);
-    box-shadow: 0 4px 16px var(--color-overlay);
-}
-
 .query {
     margin-bottom: var(--space-1);
-}
-
-.option {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: 2px var(--space-1);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-}
-
-.option:hover {
-    background: var(--color-hover);
 }
 </style>

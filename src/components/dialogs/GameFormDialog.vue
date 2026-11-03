@@ -231,7 +231,7 @@ async function removeGame() {
           </div>
           <p class="hint">
             Status: <strong>{{ derivedStatus }}</strong>. Click a platform to switch it between
-            owned (solid) and wanted (dashed). A game is Owned when you own it on at least one
+            owned (bright) and wanted (faint). A game is Owned when you own it on at least one
             platform.
           </p>
         </div>
@@ -317,8 +317,7 @@ async function removeGame() {
 .field>span,
 .field>legend {
   padding: 0;
-  font-weight: 600;
-  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 .row {
@@ -327,10 +326,27 @@ async function removeGame() {
   gap: var(--space-3);
 }
 
+.row input {
+  flex: 1;
+  min-width: 0;
+}
+
 .checks {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-4);
+  max-height: 140px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--edge-1);
+  background: var(--fill-1);
+}
+
+.checks label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
 }
 
 .thumbs {
@@ -348,11 +364,13 @@ async function removeGame() {
 }
 
 .thumb {
+  display: block;
   width: 96px;
   height: 54px;
   object-fit: cover;
+  border: 1px solid var(--edge-2);
   border-radius: var(--radius-sm);
-  background: var(--color-hover);
+  background: var(--fill-1);
 }
 
 .thumb.cover {
@@ -361,32 +379,42 @@ async function removeGame() {
 }
 
 .x {
-  border: none;
+  padding: 0 var(--space-1);
+  border: 1px solid transparent;
   background: none;
   color: inherit;
+  font: inherit;
   cursor: pointer;
-  opacity: 0.7;
+}
+
+.x:hover,
+.x:focus-visible {
+  border-color: var(--edge-3);
+  background: var(--gradient-focus);
 }
 
 .thumb-wrap .x {
   position: absolute;
   top: 0;
   right: 0;
-  padding: 0 5px;
-  border-radius: 0 var(--radius-sm) 0 var(--radius-sm);
+  border-color: var(--edge-2);
+  border-radius: var(--radius-sm);
   background: var(--color-on-image-bg);
   color: var(--color-on-image);
-  opacity: 1;
+}
+
+.thumb-wrap .x:hover,
+.thumb-wrap .x:focus-visible {
+  border-color: var(--edge-3);
+  background: var(--gradient-focus), var(--color-on-image-bg);
 }
 
 .staged-list {
   margin: 0;
   padding-left: var(--space-4);
-  font-size: var(--font-size-sm);
 }
 
 .staged {
-  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
 

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Settings } from "../types/game";
+import type { Appearance } from "../lib/appearance";
 
 export function getSettings(): Promise<Settings> {
     return invoke("get_settings");
@@ -15,4 +16,12 @@ export function getUiState(): Promise<string | null> {
 
 export function setUiState(json: string): Promise<void> {
     return invoke("set_ui_state", { json });
+}
+
+export function getAppearance(): Promise<Appearance> {
+    return invoke("get_appearance");
+}
+
+export function setAppearance(appearance: Appearance): Promise<Appearance> {
+    return invoke("set_appearance", { appearance });
 }

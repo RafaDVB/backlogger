@@ -1,6 +1,6 @@
 use crate::db::settings;
 use crate::error::{AppError, AppResult};
-use crate::models::Settings;
+use crate::models::{Appearance, Settings};
 use crate::state::AppState;
 use tauri::State;
 
@@ -32,4 +32,17 @@ pub fn set_ui_state(state: State<'_, AppState>, json: String) -> AppResult<()> {
     }
     let conn = state.db.lock().map_err(|_| AppError::Lock)?;
     settings::set(&conn, settings::UI_STATE, &json)
+}
+
+#[tauri::command]
+pub fn get_appearance(state: State<'_, AppState>) -> AppResult<Appearance> {
+    let conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    settings::appearance(&conn)
+}
+
+#[tauri::command]
+pub fn set_appearance(state: State<'_, AppState>, appearance: Appearance) -> AppResult<Appearance> {
+    let conn = state.db.lock().map_err(|_| AppError::Lock)?;
+    settings::set_appearance(&conn, &appearance)?;
+    settings::appearance(&conn)
 }

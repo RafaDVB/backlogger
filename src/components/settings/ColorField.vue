@@ -31,10 +31,28 @@ function onChange(event: Event) {
 input[type="color"] {
   width: 34px;
   height: 26px;
-  padding: 0;
-  border: 1px solid var(--color-border);
+  padding: 2px;
+  border: 1px solid var(--edge-2);
   border-radius: var(--radius-sm);
-  background: none;
+  background: var(--fill-1);
   cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0;
+}
+
+input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 0;
+}
+
+input[type="color"]:hover {
+  border-color: var(--edge-3);
 }
 </style>

@@ -46,14 +46,18 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
     max-height: 90vh;
     overflow-y: auto;
     padding: var(--space-5);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--edge-3);
     border-radius: var(--radius-lg);
-    background: var(--color-surface-raised);
+    background: linear-gradient(180deg, var(--fill-3), var(--fill-2)), var(--wall-2);
     color: var(--color-text);
 }
 
 .title {
-    margin: 0 0 var(--space-3);
+    margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4);
+    padding: var(--space-1) var(--space-3);
+    border-bottom: 1px solid var(--edge-2);
+    background: var(--gradient-title);
+    font-size: var(--font-size-md);
 }
 
 .footer {

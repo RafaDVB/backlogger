@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ShelfSidebar from "./components/shelf/ShelfSidebar.vue";
+import BackgroundCanvas from "./components/ui/BackgroundCanvas.vue";
 import { useNavStore } from "./stores/navigation";
 import GameDetailView from "./views/GameDetailView.vue";
 import LibraryView from "./views/LibraryView.vue";
@@ -10,6 +11,7 @@ const nav = useNavStore();
 
 <template>
   <div class="app">
+    <BackgroundCanvas />
     <ShelfSidebar />
     <main class="main">
       <LibraryView v-show="nav.openGameId === null && !nav.settingsOpen" />
@@ -22,7 +24,7 @@ const nav = useNavStore();
 <style>
 .app {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 340px 1fr;
   height: 100vh;
 }
 

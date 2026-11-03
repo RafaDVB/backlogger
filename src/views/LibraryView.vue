@@ -7,8 +7,10 @@ import FilterBar from "../components/library/FilterBar.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
 import TabBar from "../components/ui/TabBar.vue";
 import { isLeaving, useDragDrop } from "../composables/useDragDrop";
+import { LIBRARY_SIZE } from "../lib/appearance";
 import { applyFilters, hasActiveFilters, sortGames } from "../lib/gameFilters";
 import type { Tab } from "../lib/viewState";
+import { useAppearanceStore } from "../stores/appearance";
 import { useLibraryStore } from "../stores/library";
 import { useListsStore } from "../stores/lists";
 import { useNavStore } from "../stores/navigation";
@@ -16,6 +18,7 @@ import { useShelfStore } from "../stores/shelf";
 import { useViewStore } from "../stores/view";
 import type { GameSummary } from "../types/game";
 
+const appearance = useAppearanceStore();
 const library = useLibraryStore();
 const lists = useListsStore();
 const nav = useNavStore();
@@ -120,6 +123,11 @@ function onDrop(event: DragEvent) {
     <div class="top">
       <TabBar v-model="view.tab" :tabs="tabs" />
       <div class="actions">
+        <label class="size">
+          <span class="hint">Size</span>
+          <input v-model.number="appearance.librarySize" type="range" :min="LIBRARY_SIZE.min" :max="LIBRARY_SIZE.max"
+            step="10" aria-label="Tile size" />
+        </label>
         <BaseButton variant="primary" @click="openAdd">+ Add game</BaseButton>
         <BaseButton @click="nav.openSettings()">Settings</BaseButton>
       </div>
@@ -129,7 +137,7 @@ function onDrop(event: DragEvent) {
 
     <p v-if="library.error && !markOwnedTarget" class="error">{{ library.error }}</p>
     <p v-if="removeZoneActive" class="zone-hint">Drop here to take this game off the shelf</p>
-    <p v-if="hasActiveFilters(view.filters) && library.games.length > 0" class="hint">
+    <p v-if="hasActiveFilters(view.filters) && library.games.length > 0" class="status">
       Showing {{ filtered.length }} of {{ library.games.length }} games
     </p>
 
@@ -145,7 +153,8 @@ function onDrop(event: DragEvent) {
       </BaseButton>
     </div>
 
-    <GameGrid v-else :games="shown" @select="nav.open($event)" @mark-owned="askMarkOwned($event)" />
+    <GameGrid v-else :games="shown" :style="{ '--tile': `${appearance.librarySize}px` }" @select="nav.open($event)"
+      @mark-owned="askMarkOwned($event)" />
 
     <GameFormDialog v-if="adding" :game-id="null" :default-status="view.tab === 'owned' ? 'owned' : 'interested'"
       @close="adding = false" />
@@ -158,16 +167,32 @@ function onDrop(event: DragEvent) {
 <style scoped>
 section {
   min-height: 100%;
-  border: 2px dashed transparent;
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
 }
 
 section.remove-zone {
-  border-color: var(--color-accent);
+  border-color: var(--edge-3);
+  background: var(--gradient-focus);
+}
+
+.size {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .zone-hint {
-  color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.status {
+  display: inline-block;
+  margin: 0 0 var(--space-3);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--edge-1);
+  background: var(--fill-1);
+  color: var(--color-text-muted);
 }
 
 .top {
@@ -184,6 +209,18 @@ section.remove-zone {
 }
 
 .empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-4);
+  border: 1px solid var(--edge-1);
+  background: var(--fill-1);
   color: var(--color-text-muted);
+  text-align: center;
+}
+
+.empty p {
+  margin: 0;
 }
 </style>

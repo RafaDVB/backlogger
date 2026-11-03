@@ -6,6 +6,7 @@ import { useViewStore } from "../../stores/view";
 import type { Outcome } from "../../types/game";
 import BaseButton from "../ui/BaseButton.vue";
 import BaseChip from "../ui/BaseChip.vue";
+import BaseSelect from "../ui/BaseSelect.vue";
 import MultiSelect from "../ui/MultiSelect.vue";
 
 const view = useViewStore();
@@ -26,6 +27,15 @@ const outcomeOptions: { value: Outcome | "none"; label: string }[] = [
     { value: "none", label: "No outcome" },
     { value: "completed", label: "Completed" },
     { value: "dropped", label: "Dropped" },
+];
+const sortOptions: { value: "title" | "year"; label: string }[] = [
+    { value: "title", label: "Title" },
+    { value: "year", label: "Release year" },
+];
+const platformModeOptions: { value: "any" | "owned" | "wanted"; label: string }[] = [
+    { value: "any", label: "linked to" },
+    { value: "owned", label: "owned on" },
+    { value: "wanted", label: "wanted on" },
 ];
 
 function toggleOutcome(value: Outcome | "none") {
@@ -78,13 +88,10 @@ watch(
             <input v-model="view.filters.search" type="text" class="search" placeholder="Search by title or year…"
                 @keydown.esc="view.filters.search = ''" />
 
-            <label class="group">
+            <span class="group">
                 <span class="hint">Sort</span>
-                <select v-model="view.sort.field">
-                    <option value="title">Title</option>
-                    <option value="year">Release year</option>
-                </select>
-            </label>
+                <BaseSelect v-model="view.sort.field" :options="sortOptions" />
+            </span>
             <BaseButton size="sm" title="Change the sort direction" @click="toggleDirection">
                 {{ directionLabel }}
             </BaseButton>
@@ -102,11 +109,8 @@ watch(
 
             <span class="group">
                 <MultiSelect v-model="view.filters.platformIds" label="Platforms" :options="platformOptions" />
-                <select v-model="view.filters.platformMode" :disabled="view.filters.platformIds.length === 0">
-                    <option value="any">linked to</option>
-                    <option value="owned">owned on</option>
-                    <option value="wanted">wanted on</option>
-                </select>
+                <BaseSelect v-model="view.filters.platformMode" :options="platformModeOptions"
+                    :disabled="view.filters.platformIds.length === 0" />
             </span>
 
             <MultiSelect v-model="view.filters.ratingIds" label="Ratings" :options="ratingOptions" />

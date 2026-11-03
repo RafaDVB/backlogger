@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { GamePlatform, Platform, PlatformState } from "../../types/game";
+import BaseSelect from "../ui/BaseSelect.vue";
 import PlatformTag from "../ui/PlatformTag.vue";
 
 const props = defineProps<{
@@ -15,11 +17,10 @@ function hint(platform: GamePlatform): string {
         : `Wanted on ${platform.name}. Click to mark as owned.`;
 }
 
-function onPick(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const id = Number(select.value);
-    select.value = "";
-    if (id) emit("set", id, props.newState ?? "wanted");
+const availableOptions = computed(() => props.available.map((p) => ({ value: p.id, label: p.name })));
+
+function onAdd(id: number) {
+    emit("set", id, props.newState ?? "wanted");
 }
 </script>
 
@@ -36,12 +37,8 @@ function onPick(event: Event) {
             </button>
         </span>
 
-        <select v-if="available.length" value="" @change="onPick">
-            <option value="" disabled>+ Add platform…</option>
-            <option v-for="platform in available" :key="platform.id" :value="String(platform.id)">
-                {{ platform.name }}
-            </option>
-        </select>
+        <BaseSelect v-if="available.length" :model-value="null" :options="availableOptions"
+            placeholder="+ Add platform…" @update:model-value="onAdd" />
         <span v-if="platforms.length === 0 && available.length === 0" class="hint">
             No platforms yet. Add some in Settings.
         </span>
@@ -59,10 +56,11 @@ function onPick(event: Event) {
 
 .item {
     display: inline-flex;
-    align-items: center;
+    align-items: stretch;
 }
 
 .toggle {
+    display: flex;
     padding: 0;
     border: none;
     background: none;
@@ -70,15 +68,28 @@ function onPick(event: Event) {
     cursor: pointer;
 }
 
+.toggle:hover :deep(.tag),
+.toggle:focus-visible :deep(.tag) {
+    border-color: var(--edge-3);
+}
+
 .remove {
+    position: relative;
+    margin-left: 0px;
     padding: 0 var(--space-1);
-    border: none;
-    background: none;
+    font: inherit;
     color: var(--color-text-muted);
+    background: var(--fill-1);
+    border: 1px solid var(--edge-1);
+    border-radius: var(--radius-sm);
     cursor: pointer;
 }
 
-.remove:hover {
+.remove:hover,
+.remove:focus-visible {
+    z-index: 1;
     color: var(--color-danger);
+    border-color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 25%, transparent);
 }
 </style>

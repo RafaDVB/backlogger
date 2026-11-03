@@ -71,6 +71,8 @@ pub fn run() {
             commands::settings::get_ui_state,
             commands::settings::set_ui_state,
             commands::settings::set_rawg_api_key,
+            commands::settings::get_appearance,
+            commands::settings::set_appearance,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

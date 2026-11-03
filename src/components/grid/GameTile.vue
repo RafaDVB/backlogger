@@ -25,7 +25,6 @@ function onDragStart(event: DragEvent) {
   });
 }
 
-// Featured screenshot first, then the others; the cover only when there are no screenshots.
 const images = computed(() => {
   const { featuredPath, screenshotPaths, coverPath } = props.game;
   const paths = featuredPath
@@ -67,6 +66,9 @@ const label = computed(() =>
 
 <style scoped>
 .tile {
+  border: 1px solid var(--edge-1);
+  border-radius: var(--radius-md);
+  background: var(--fill-1);
   cursor: pointer;
 }
 
@@ -74,12 +76,23 @@ const label = computed(() =>
   cursor: grab;
 }
 
+.tile:hover,
+.tile:focus-visible {
+  border-color: var(--edge-3);
+  background: var(--fill-2);
+}
+
+.tile:focus-visible {
+  outline: 1px solid var(--edge-3);
+  outline-offset: 2px;
+}
+
 .frame {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: var(--color-hover);
+  border-bottom: 1px solid var(--edge-1);
+  background: var(--fill-1);
 }
 
 .frame img {
@@ -100,11 +113,10 @@ const label = computed(() =>
   position: absolute;
   top: var(--space-2);
   left: var(--space-2);
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-pill);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--edge-2);
   background: var(--color-on-image-bg);
   color: var(--color-on-image);
-  font-size: var(--font-size-sm);
   text-transform: capitalize;
 }
 
@@ -112,15 +124,21 @@ const label = computed(() =>
   position: absolute;
   right: var(--space-2);
   bottom: var(--space-2);
-  padding: var(--space-1) 10px;
-  border: none;
-  border-radius: var(--radius-md);
+  padding: 2px var(--space-2);
+  font: inherit;
+  border: 1px solid var(--edge-2);
+  border-radius: var(--radius-sm);
   background: var(--color-on-image-bg);
   color: var(--color-on-image);
-  font-size: var(--font-size-sm);
   cursor: pointer;
   opacity: 0;
   transition: opacity var(--transition);
+}
+
+.own:hover,
+.own:focus-visible {
+  border-color: var(--edge-3);
+  background: var(--gradient-focus), var(--color-on-image-bg);
 }
 
 .tile:hover .own,
@@ -129,8 +147,7 @@ const label = computed(() =>
 }
 
 .label {
-  margin-top: var(--space-1);
-  font-size: var(--font-size-sm);
+  padding: var(--space-1) var(--space-2) 0;
 }
 
 .platforms {
@@ -138,11 +155,14 @@ const label = computed(() =>
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
-  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2) var(--space-2);
+}
+
+.label:last-child {
+  padding-bottom: var(--space-2);
 }
 
 .more {
-  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
 </style>

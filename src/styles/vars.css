@@ -1,26 +1,52 @@
 :root {
-    color-scheme: light;
+    color-scheme: dark;
 
-    --color-bg: #ffffff;
-    --color-surface: #f4f4f6;
-    --color-surface-raised: #ffffff;
-    --color-text: #1c1c21;
-    --color-text-muted: #62626c;
-    --color-border: #cfcfd6;
-    --color-hover: rgba(28, 28, 33, 0.07);
-    --color-selected: rgba(28, 28, 33, 0.12);
-    --color-accent: #2e8b57;
-    --color-accent-text: #ffffff;
-    --color-accent-soft: rgba(46, 139, 87, 0.18);
-    --color-danger: #c4283a;
-    --color-overlay: rgba(0, 0, 0, 0.5);
+    --accent-a: #ffb03a;
+    --accent-b: #ff4d4d;
+    --wall-1: #1d0a0a;
+    --wall-2: #3a0f12;
+    --wall-3: #6a2410;
+
+    --fill-1: rgba(255, 255, 255, 0.07);
+    --edge-1: #808080;
+    --fill-2: rgba(255, 255, 255, 0.16);
+    --edge-2: #cccccc;
+    --fill-3: rgba(255, 255, 255, 0.3);
+    --edge-3: #ffffff;
+
+    --gradient-focus: linear-gradient(90deg,
+            color-mix(in srgb, var(--accent-a) 50%, transparent),
+            color-mix(in srgb, var(--accent-b) 25%, transparent));
+    --gradient-title: linear-gradient(90deg,
+            color-mix(in srgb, var(--accent-a) 55%, transparent),
+            color-mix(in srgb, var(--accent-b) 30%, transparent));
+    --gradient-wall:
+        radial-gradient(circle at 85% 10%, color-mix(in srgb, var(--accent-a) 40%, transparent), transparent 45%),
+        radial-gradient(circle at 10% 90%, color-mix(in srgb, var(--accent-b) 40%, transparent), transparent 50%),
+        linear-gradient(135deg, var(--wall-1), var(--wall-2) 55%, var(--wall-3));
+
+    --gradient-popup: linear-gradient(180deg, var(--fill-3), var(--fill-2)), var(--wall-2);
+
+    --color-bg: var(--wall-1);
+    --color-surface: var(--fill-1);
+    --color-surface-raised: var(--fill-2);
+    --color-text: #ffffff;
+    --color-text-muted: rgba(255, 255, 255, 0.65);
+    --color-border: var(--edge-1);
+    --color-hover: rgba(255, 255, 255, 0.12);
+    --color-selected: var(--fill-3);
+    --color-accent: var(--accent-a);
+    --color-accent-text: #0b0b12;
+    --color-accent-soft: color-mix(in srgb, var(--accent-a) 22%, transparent);
+    --color-danger: #ff6b6b;
+    --color-overlay: rgba(0, 0, 0, 0.55);
     --color-on-image: #ffffff;
     --color-on-image-bg: rgba(0, 0, 0, 0.7);
 
-    --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-size-sm: 0.8125rem;
+    --font-body: "PixelOperator", ui-monospace, "Courier New", monospace;
+    --font-size-sm: 1rem;
     --font-size-md: 1rem;
-    --font-size-lg: 1.25rem;
+    --font-size-lg: 2rem;
 
     --space-1: 4px;
     --space-2: 8px;
@@ -28,46 +54,26 @@
     --space-4: 16px;
     --space-5: 24px;
 
-    --radius-sm: 4px;
-    --radius-md: 6px;
-    --radius-lg: 10px;
-    --radius-pill: 999px;
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-pill: 0;
 
-    --transition: 0.15s ease;
+    --transition: 0.12s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-        color-scheme: dark;
-
-        --color-bg: #15151a;
-        --color-surface: #1e1e25;
-        --color-surface-raised: #26262e;
-        --color-text: #ececf1;
-        --color-text-muted: #a2a2ad;
-        --color-border: #3b3b46;
-        --color-hover: rgba(236, 236, 241, 0.09);
-        --color-selected: rgba(236, 236, 241, 0.16);
-        --color-accent: #3fae78;
-        --color-accent-text: #0b1510;
-        --color-accent-soft: rgba(63, 174, 120, 0.22);
-        --color-danger: #ef5b6b;
-    }
+:root[data-theme="aqua"] {
+    --accent-a: #35d0ff;
+    --accent-b: #3a7bff;
+    --wall-1: #04142b;
+    --wall-2: #0b2f5e;
+    --wall-3: #0c5a6a;
 }
 
-:root[data-theme="dark"] {
-    color-scheme: dark;
-
-    --color-bg: #15151a;
-    --color-surface: #1e1e25;
-    --color-surface-raised: #26262e;
-    --color-text: #ececf1;
-    --color-text-muted: #a2a2ad;
-    --color-border: #3b3b46;
-    --color-hover: rgba(236, 236, 241, 0.09);
-    --color-selected: rgba(236, 236, 241, 0.16);
-    --color-accent: #3fae78;
-    --color-accent-text: #0b1510;
-    --color-accent-soft: rgba(63, 174, 120, 0.22);
-    --color-danger: #ef5b6b;
+:root[data-theme="violet"] {
+    --accent-a: #d27bff;
+    --accent-b: #ff5fa8;
+    --wall-1: #14052e;
+    --wall-2: #2d0b56;
+    --wall-3: #5a1052;
 }

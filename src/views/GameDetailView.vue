@@ -13,7 +13,6 @@ import * as imagesApi from "../api/images";
 import { usePasteImages } from "../composables/usePasteImages";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseChip from "../components/ui/BaseChip.vue";
-/* import PlatformTag from "../components/ui/PlatformTag.vue"; */
 import MarkOwnedDialog from "../components/dialogs/MarkOwnedDialog.vue";
 import PlatformEditor from "../components/detail/PlatformEditor.vue";
 
@@ -143,65 +142,70 @@ usePasteImages(async (images) => {
 
         <p v-if="error" class="error">{{ error }}</p>
 
-        <div class="gallery">
-            <div class="big">
-                <img v-if="bigImage" :src="bigImage" :alt="game.title" />
-                <div v-else class="no-image">No images yet</div>
-                <span v-if="current && current.id === featuredId" class="badge">Featured</span>
+        <div class="layout">
+            <div class="gallery">
+                <div class="big">
+                    <img v-if="bigImage" :src="bigImage" :alt="game.title" />
+                    <div v-else class="no-image">No images yet</div>
+                    <span v-if="current && current.id === featuredId" class="badge">Featured</span>
+                </div>
+                <div class="strip">
+                    <button v-for="(shot, index) in shots" :key="shot.id" type="button" class="thumb"
+                        :class="{ selected: index === selectedIndex }" @click="selectedIndex = index">
+                        <img :src="resolveImage(shot.path) ?? undefined" alt="" />
+                    </button>
+                </div>
+                <BaseButton v-if="current && current.id !== featuredId" size="sm" @click="setFeatured">
+                    Use as featured screenshot
+                </BaseButton>
+                <p class="hint">Tip: copy an image and press Ctrl+V on this screen to add it as a screenshot.</p>
             </div>
-            <div class="strip">
-                <button v-for="(shot, index) in shots" :key="shot.id" type="button" class="thumb"
-                    :class="{ selected: index === selectedIndex }" @click="selectedIndex = index">
-                    <img :src="resolveImage(shot.path) ?? undefined" alt="" />
-                </button>
-            </div>
-            <BaseButton v-if="current && current.id !== featuredId" size="sm" @click="setFeatured">
-                Use as featured screenshot
-            </BaseButton>
-            <p class="hint">Tip: copy an image and press Ctrl+V on this screen to add it as a screenshot.</p>
-        </div>
 
-        <div class="block">
-            <p>
-                {{ isOwned ? "Owned" : "Interested" }}
-                <span v-if="game.shelfSlot"> · On the shelf (slot {{ game.shelfSlot }})</span>
-            </p>
-            <PlatformEditor :platforms="game.platforms" :available="availablePlatforms" @set="setPlatform" />
-            <div class="chips">
-                <span v-for="genre in game.genres" :key="genre.id" class="tag genre">
-                    {{ genre.name }}
-                </span>
-            </div>
-        </div>
+            <div class="info">
+                <div class="block">
+                    <p>
+                        {{ isOwned ? "Owned" : "Interested" }}
+                        <span v-if="game.shelfSlot"> · On the shelf (slot {{ game.shelfSlot }})</span>
+                    </p>
+                    <PlatformEditor :platforms="game.platforms" :available="availablePlatforms" @set="setPlatform" />
+                    <div v-if="game.genres.length" class="chips genres">
+                        <span v-for="genre in game.genres" :key="genre.id" class="tag genre">
+                            {{ genre.name }}
+                        </span>
+                    </div>
+                </div>
 
-        <div class="block">
-            <h3>Rating</h3>
-            <div class="chips">
-                <BaseChip :active="game.rating === null" @click="setRating(null)">Unrated</BaseChip>
-                <BaseChip v-for="rating in lists.ratings" :key="rating.id" :active="game.rating?.id === rating.id"
-                    :style="rating.color ? { borderLeft: '6px solid ' + rating.color } : undefined"
-                    @click="setRating(rating.id)">
-                    {{ rating.label }}
-                </BaseChip>
-            </div>
-        </div>
+                <div class="block">
+                    <h3>Rating</h3>
+                    <div class="chips">
+                        <BaseChip :active="game.rating === null" @click="setRating(null)">Unrated</BaseChip>
+                        <BaseChip v-for="rating in lists.ratings" :key="rating.id"
+                            :active="game.rating?.id === rating.id"
+                            :style="rating.color ? { borderLeft: '6px solid ' + rating.color } : undefined"
+                            @click="setRating(rating.id)">
+                            {{ rating.label }}
+                        </BaseChip>
+                    </div>
+                </div>
 
-        <div class="block">
-            <h3>Outcome</h3>
-            <div class="chips">
-                <BaseChip v-for="option in outcomes" :key="option.label" :active="game.outcome === option.value"
-                    :disabled="!isOwned" @click="setOutcome(option.value)">
-                    {{ option.label }}
-                </BaseChip>
-            </div>
-            <p v-if="!isOwned" class="hint">Mark the game as owned to track whether you finished it.</p>
-        </div>
+                <div class="block">
+                    <h3>Outcome</h3>
+                    <div class="chips">
+                        <BaseChip v-for="option in outcomes" :key="option.label" :active="game.outcome === option.value"
+                            :disabled="!isOwned" @click="setOutcome(option.value)">
+                            {{ option.label }}
+                        </BaseChip>
+                    </div>
+                    <p v-if="!isOwned" class="hint">Mark the game as owned to track whether you finished it.</p>
+                </div>
 
-        <div class="block">
-            <h3>
-                Notes <span class="save-state">{{ saveLabel }}</span>
-            </h3>
-            <textarea v-model="notes" rows="8" placeholder="Where you left off, passwords, thoughts…" />
+                <div class="block">
+                    <h3>
+                        Notes <span class="save-state">{{ saveLabel }}</span>
+                    </h3>
+                    <textarea v-model="notes" rows="8" placeholder="Where you left off, passwords, thoughts…" />
+                </div>
+            </div>
         </div>
 
         <MarkOwnedDialog v-if="markingOwned" :title="game.title" :linked="game.platforms" :error="error"
@@ -223,10 +227,24 @@ usePasteImages(async (images) => {
 
 .top h2 {
     margin: 0;
+    font-size: var(--font-size-lg);
 }
 
 .spacer {
     flex: 1;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 720px) minmax(280px, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+}
+
+@media (max-width: 1100px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
 }
 
 .gallery {
@@ -234,19 +252,19 @@ usePasteImages(async (images) => {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-3);
-    margin-bottom: var(--space-5);
 }
 
 .big {
     position: relative;
-    width: min(720px, 100%);
+    width: 100%;
     aspect-ratio: 16 / 9;
-    border-radius: var(--radius-lg);
     overflow: hidden;
-    background: var(--color-hover);
+    border: 1px solid var(--edge-2);
+    background: var(--fill-1);
 }
 
 .big img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -263,11 +281,10 @@ usePasteImages(async (images) => {
     position: absolute;
     top: var(--space-2);
     left: var(--space-2);
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-pill);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--edge-2);
     background: var(--color-on-image-bg);
     color: var(--color-on-image);
-    font-size: var(--font-size-sm);
 }
 
 .strip {
@@ -278,16 +295,25 @@ usePasteImages(async (images) => {
 
 .thumb {
     padding: 0;
-    border: 2px solid transparent;
-    border-radius: var(--radius-md);
+    border: 1px solid var(--edge-1);
+    border-radius: var(--radius-sm);
     overflow: hidden;
     line-height: 0;
-    background: none;
+    background: var(--fill-1);
     cursor: pointer;
+    opacity: 0.7;
+}
+
+.thumb:hover,
+.thumb:focus-visible {
+    border-color: var(--edge-3);
+    opacity: 1;
 }
 
 .thumb.selected {
-    border-color: var(--color-accent);
+    border-color: var(--edge-3);
+    box-shadow: 0 0 0 1px var(--edge-3);
+    opacity: 1;
 }
 
 .thumb img {
@@ -296,13 +322,28 @@ usePasteImages(async (images) => {
     object-fit: cover;
 }
 
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
 .block {
-    margin-bottom: var(--space-5);
+    padding: var(--space-3);
+    border: 1px solid var(--edge-1);
+    background: var(--fill-1);
+}
+
+.block p {
+    margin: 0 0 var(--space-2);
 }
 
 .block h3 {
     margin: 0 0 var(--space-2);
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid var(--edge-1);
     font-size: var(--font-size-md);
+    color: var(--color-text-muted);
 }
 
 .chips {
@@ -311,15 +352,21 @@ usePasteImages(async (images) => {
     gap: var(--space-2);
 }
 
+.genres {
+    margin-top: var(--space-2);
+}
+
 .tag {
-    padding: 2px 10px;
-    border-radius: var(--radius-pill);
-    background: var(--color-hover);
-    font-size: var(--font-size-sm);
+    padding: 0 var(--space-1);
+    border: 1px solid var(--edge-1);
+    background: var(--fill-1);
+    color: var(--color-text-muted);
 }
 
 .tag.genre {
-    background: var(--color-accent-soft);
+    border-color: var(--edge-2);
+    background: var(--fill-2);
+    color: var(--color-text);
 }
 
 textarea {
@@ -328,8 +375,6 @@ textarea {
 }
 
 .save-state {
-    font-size: var(--font-size-sm);
-    font-weight: normal;
     color: var(--color-text-muted);
 }
 </style>

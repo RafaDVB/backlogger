@@ -5,6 +5,7 @@ import type { GamePlatform } from "../../types/game";
 import BaseButton from "../ui/BaseButton.vue";
 import BaseChip from "../ui/BaseChip.vue";
 import BaseDialog from "../ui/BaseDialog.vue";
+import BaseSelect from "../ui/BaseSelect.vue";
 
 const props = defineProps<{ title: string; linked: GamePlatform[]; error: string | null }>();
 const emit = defineEmits<{ confirm: [platformId: number]; cancel: [] }>();
@@ -22,10 +23,8 @@ const otherSelected = computed(
     () => selected.value !== null && !props.linked.some((l) => l.id === selected.value),
 );
 
-function onPickOther(event: Event) {
-    const id = Number((event.target as HTMLSelectElement).value);
-    if (id) selected.value = id;
-}
+const otherOptions = computed(() => others.value.map((p) => ({ value: p.id, label: p.name })));
+const otherValue = computed(() => (otherSelected.value ? selected.value : null));
 
 function confirm() {
     if (selected.value !== null) emit("confirm", selected.value);
@@ -43,15 +42,11 @@ function confirm() {
             </BaseChip>
         </div>
 
-        <label v-if="others.length" class="other">
+        <div v-if="others.length" class="other">
             <span class="hint">{{ linked.length ? "Or another platform:" : "Platform:" }}</span>
-            <select :value="otherSelected ? String(selected) : ''" @change="onPickOther">
-                <option value="">choose…</option>
-                <option v-for="platform in others" :key="platform.id" :value="String(platform.id)">
-                    {{ platform.name }}
-                </option>
-            </select>
-        </label>
+            <BaseSelect :model-value="otherValue" :options="otherOptions" placeholder="choose…"
+                @update:model-value="selected = $event" />
+        </div>
 
         <p class="hint">
             That platform becomes owned. The game's other platforms stay on your wanted list.

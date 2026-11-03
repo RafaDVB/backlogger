@@ -226,3 +226,21 @@ pub struct DeletePreview {
 pub struct Settings {
     pub rawg_api_key: Option<String>,
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Appearance {
+    pub theme: String,
+    pub background: String,
+    pub library_size: i64,
+}
+
+impl Default for Appearance {
+    fn default() -> Self {
+        Appearance {
+            theme: "ember".into(),
+            background: "stars".into(),
+            library_size: 240,
+        }
+    }
+}

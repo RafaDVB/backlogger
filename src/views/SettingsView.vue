@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import ConfirmDeleteDialog from "../components/settings/ConfirmDeleteDialog.vue";
 import NamedListEditor from "../components/settings/NamedListEditor.vue";
 import RatingsEditor from "../components/settings/RatingsEditor.vue";
+import AppearanceEditor from "../components/settings/AppearanceEditor.vue";
 import { useListsStore } from "../stores/lists";
 import { useNavStore } from "../stores/navigation";
 import { useSettingsStore } from "../stores/settings";
@@ -10,7 +11,7 @@ import type { DeletePreview } from "../types/game";
 import BaseButton from "../components/ui/BaseButton.vue";
 import TabBar from "../components/ui/TabBar.vue";
 
-type Tab = "genres" | "platforms" | "ratings" | "rawg";
+type Tab = "genres" | "platforms" | "ratings" | "appearance" | "rawg";
 type ListKind = "genre" | "platform" | "rating";
 
 const nav = useNavStore();
@@ -21,6 +22,7 @@ const tabs: { id: Tab; label: string }[] = [
     { id: "genres", label: "Genres" },
     { id: "platforms", label: "Platforms" },
     { id: "ratings", label: "Ratings" },
+    { id: "appearance", label: "Appearance" },
     { id: "rawg", label: "RAWG" },
 ];
 const tab = ref<Tab>("genres");
@@ -100,7 +102,9 @@ async function saveKey() {
             :update-rating="lists.updateRating" :reorder="lists.reorderRatings"
             :request-delete="(id) => askDelete('rating', id)" />
 
-        <div v-else>
+        <AppearanceEditor v-else-if="tab === 'appearance'" />
+
+        <div v-else-if="tab === 'rawg'">
             <h3>RAWG API key</h3>
             <p class="hint">
                 A later version will use this to search for games online. RAWG gives out free keys on its
@@ -147,5 +151,12 @@ async function saveKey() {
 input[type="text"],
 input[type="password"] {
     min-width: 280px;
+}
+
+.row label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
 }
 </style>

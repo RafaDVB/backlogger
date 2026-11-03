@@ -16,7 +16,7 @@ defineEmits<{ select: [id: number]; markOwned: [id: number] }>();
 <style scoped>
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--tile, 240px), 100%), 1fr));
+  gap: var(--space-3);
 }
 </style>

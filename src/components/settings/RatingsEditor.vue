@@ -98,11 +98,27 @@ function move(index: number, offset: -1 | 1) {
     list-style: none;
     margin: 0;
     padding: 0;
+    border: 1px solid var(--edge-1);
+    background: var(--fill-1);
 }
 
 .items li {
-    padding: var(--space-2) 0;
-    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--edge-1);
+}
+
+.items li:last-child {
+    border-bottom: none;
+}
+
+.items li:hover {
+    background: var(--fill-2);
+}
+
+.row input[type="text"] {
+    flex: 1;
+    min-width: 160px;
+    max-width: 420px;
 }
 
 .name {
