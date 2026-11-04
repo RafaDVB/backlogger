@@ -30,6 +30,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::system::ping,
+            commands::system::get_legal_info,
             commands::games::list_games,
             commands::games::get_game,
             commands::games::mark_owned,

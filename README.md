@@ -1,19 +1,17 @@
 # Backlogger
 
-A local-first desktop app for tracking your video game backlog. Keep an owned/interested
-library, fill a six-slot "Now Playing" shelf, and record ratings, completion status,
-platforms, screenshots, and notes — all stored on your own machine, with no account or
-network required.
+A local-first desktop app for tracking your video game backlog, wishlist and on-going playthroughs. Inspired by Ross Scott's
+Big Game List in Accursed farms and a video on the "rule of three", where you pick three games, three movies and three books
+for the entire month. This app is focused on the gaming side.
 
 ## Features
 
-- **Library** — separate *Owned* and *Interested* tabs, with release year, platforms, and genres.
-- **Shelf** — a six-slot *Now Playing* shelf with drag-and-drop placement, reordering, and a removal flow.
-- **Game details** — cover image, screenshot gallery with a featured shot, 1–10 rating,
-  completed/dropped outcome, and free-form notes.
+- **Library** — separate tabs for games you owned and ones you're interested in, with release year, platforms, and genres.
+- **Shelf** — a six-slot virtual shelf with drag-and-drop placement, reordering, and a removal flow.
+- **Game details** — cover image, screenshot gallery with a featured shot, customizable rating,
+  completed/dropped status, and free-form notes.
 - **Platform ownership** — mark each platform for a game as owned or wanted.
-- **Local storage** — SQLite database and imported images live in the Tauri app data
-  directory. Nothing leaves your computer.
+- **Local storage** — SQLite database and imported images live in your computer. Specifically in %appdata% or ~/.local/share
 
 ## Tech stack
 
@@ -50,7 +48,7 @@ pnpm tauri build
 | `pnpm dev`        | Run the Vite frontend only                   |
 | `pnpm typecheck`  | Type-check the Vue/TypeScript sources        |
 | `pnpm build`      | Type-check and build the frontend            |
-| `pnpm test`       | Run the Rust test suite                      |
+| `pnpm test`       | Run the Rust and vitest test suites          |
 | `pnpm tauri dev`  | Run the desktop app in development           |
 | `pnpm tauri build`| Build the desktop app bundle                 |
 
@@ -98,13 +96,26 @@ The app creates its database on first launch. To load the sample library:
    ```
 
    The directory is `%APPDATA%\com.kiiro.backlogger\` on Windows and
-   `~/Library/Application Support/com.kiiro.backlogger/` on macOS.
+   `~/.local/share/com.kiiro.backlogger/` on Linux.
 
 ## License
+
+Copyright (C) 2026 RafaDVB.
 
 Backlogger is free software: you can redistribute it and/or modify it under the
 terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version.
 
-See [LICENSE](LICENSE) for the full text.
+Backlogger is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See [LICENSE](LICENSE) for the full text.
+
+Third-party components and their license texts are listed in
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). Regenerate that file with
+`pnpm licenses:generate` after changing dependencies.
+
+## Credits
+
+- [Pixel Operator](https://www.dafont.com/pixel-operator.font) font by Jayvee
+  Enaguas (HarvettFox96), released under CC0 1.0.

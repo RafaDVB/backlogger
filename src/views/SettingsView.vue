@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import packageJson from "../../package.json";
 import ConfirmDeleteDialog from "../components/settings/ConfirmDeleteDialog.vue";
 import NamedListEditor from "../components/settings/NamedListEditor.vue";
 import RatingsEditor from "../components/settings/RatingsEditor.vue";
@@ -8,12 +10,16 @@ import { useListsStore } from "../stores/lists";
 import { useNavStore } from "../stores/navigation";
 import { useSettingsStore } from "../stores/settings";
 import type { DeletePreview } from "../types/game";
+import { describeError } from "../api/errors";
+import { getLegalInfo, type LegalInfo } from "../api/system";
 import BaseButton from "../components/ui/BaseButton.vue";
+import BaseDialog from "../components/ui/BaseDialog.vue";
 import PixelIcon from "../components/ui/PixelIcon.vue";
 import TabBar from "../components/ui/TabBar.vue";
 
-type Tab = "genres" | "platforms" | "ratings" | "appearance" | "rawg";
+type Tab = "genres" | "platforms" | "ratings" | "appearance" | "rawg" | "about";
 type ListKind = "genre" | "platform" | "rating";
+type LegalView = "license" | "third-party";
 
 const nav = useNavStore();
 const lists = useListsStore();
@@ -25,6 +31,7 @@ const tabs: { id: Tab; label: string }[] = [
     { id: "ratings", label: "Ratings" },
     { id: "appearance", label: "Appearance" },
     { id: "rawg", label: "RAWG" },
+    { id: "about", label: "About" },
 ];
 const tab = ref<Tab>("genres");
 
@@ -79,6 +86,41 @@ async function saveKey() {
     keyStatus.value = saved ? "Saved" : "Couldn't save";
     keyDraft.value = settings.rawgApiKey ?? "";
 }
+
+// ---- legal notices ----
+
+const legalView = ref<LegalView | null>(null);
+const legal = ref<LegalInfo | null>(null);
+const legalLoading = ref(false);
+const legalError = ref("");
+
+const legalTitle = computed(() => (legalView.value === "third-party" ? "Third-party notices" : "License"));
+
+const legalText = computed(() => {
+    if (legalError.value) return legalError.value;
+    if (legalLoading.value || !legal.value) return "Loading...";
+    return legalView.value === "third-party" ? legal.value.thirdParty : legal.value.license;
+});
+
+async function openLegal(view: LegalView) {
+    legalView.value = view;
+    if (legal.value || legalLoading.value) return;
+    legalLoading.value = true;
+    legalError.value = "";
+    try {
+        legal.value = await getLegalInfo();
+    } catch (e) {
+        legalError.value = describeError(e);
+    } finally {
+        legalLoading.value = false;
+    }
+}
+
+function openRepository() {
+    void openUrl("https://github.com/RafaDVB/backlogger").catch((e) => {
+        console.error("Couldn't open the repository", e);
+    });
+}
 </script>
 
 <template>
@@ -124,8 +166,36 @@ async function saveKey() {
             <p class="hint">To remove the key, empty the box and save.</p>
         </div>
 
+        <div v-else-if="tab === 'about'" class="about">
+            <h3>Backlogger {{ packageJson.version }}</h3>
+            <p class="hint">A local-first video game backlog and shelf tracker.</p>
+            <p>
+                Copyright (C) 2026 RafaDVB. Backlogger is free software: you can redistribute it and/or
+                modify it under the terms of the GNU General Public License as published by the Free
+                Software Foundation, either version 3 of the License, or (at your option) any later
+                version.
+            </p>
+            <p class="hint">
+                This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+                without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+                See the GNU General Public License for more details.
+            </p>
+            <div class="row">
+                <BaseButton @click="openLegal('license')">License</BaseButton>
+                <BaseButton @click="openLegal('third-party')">Third-party notices</BaseButton>
+                <BaseButton variant="quiet" @click="openRepository">Source code</BaseButton>
+            </div>
+        </div>
+
         <ConfirmDeleteDialog v-if="pending" :kind="pending.kind" :name="pending.name" :preview="pending.preview"
             :error="lists.error" @confirm="confirmDelete" @cancel="cancelDelete" />
+
+        <BaseDialog v-if="legalView" :title="legalTitle" width="820px" @close="legalView = null">
+            <pre class="legal-text">{{ legalText }}</pre>
+            <template #footer>
+                <BaseButton variant="primary" @click="legalView = null">Close</BaseButton>
+            </template>
+        </BaseDialog>
     </section>
 </template>
 
@@ -162,5 +232,27 @@ input[type="password"] {
     align-items: center;
     gap: var(--space-2);
     cursor: pointer;
+}
+
+.about {
+    max-width: 720px;
+}
+
+.about p {
+    line-height: 1.5;
+}
+
+.legal-text {
+    max-height: 55vh;
+    margin: 0;
+    padding: var(--space-3);
+    overflow: auto;
+    border: 1px solid var(--edge-1);
+    background: var(--fill-1);
+    font-family: ui-monospace, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 </style>
