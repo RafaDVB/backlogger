@@ -1,7 +1,7 @@
 {
   "name": "backlogger",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A local-first video game backlog and shelf tracker",
   "license": "GPL-3.0-or-later",
   "packageManager": "pnpm@11.1.3",
