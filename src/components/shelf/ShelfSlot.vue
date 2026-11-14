@@ -75,7 +75,7 @@ async function onDrop(event: DragEvent) {
       @dragend="endDrag">
       <img v-if="cover" :src="cover" :alt="entry.game.title" draggable="false" />
       <div v-else class="no-cover" />
-      <span class="title">{{ entry.game.title }}</span>
+      <span class="title">{{ entry.game.title }} ({{ entry.game.releaseYear }})</span>
       <button class="remove" type="button" title="Take off the shelf" aria-label="Take off the shelf"
         @click.stop="shelf.requestRemoval(entry.game.id)">
         ×
@@ -198,7 +198,7 @@ async function onDrop(event: DragEvent) {
 .empty {
   display: flex;
   align-items: center;
-  height: 64px;
+  height: 128px;
   padding-left: 34px;
   color: var(--color-text-muted);
 }
