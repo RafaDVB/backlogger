@@ -116,6 +116,28 @@ function onDrop(event: DragEvent) {
   endDrag();
   shelf.requestRemoval(gameId);
 }
+
+/// ---- picking a random game ----
+function getRandomGame(id: string) {
+  let gameCount = 0;
+
+  switch (id) {
+    case "all":
+      gameCount = counts.value.all;
+      break;
+
+    case "owned":
+      gameCount = counts.value.owned;
+      break;
+
+    case "interested":
+      gameCount = counts.value.interested;
+      break;
+  }
+
+  const gameIndex = Math.floor(Math.random() * (gameCount + 1));
+  return shown.value[gameIndex].id;
+}
 </script>
 
 <template>
@@ -129,6 +151,7 @@ function onDrop(event: DragEvent) {
             step="10" aria-label="Tile size" />
         </label>
         <BaseButton variant="primary" @click="openAdd">+ Add game</BaseButton>
+        <BaseButton variant="primary" @click="nav.open(getRandomGame(view.tab) || 0)">Random</BaseButton>
         <BaseButton @click="nav.openSettings()">Settings</BaseButton>
       </div>
     </div>
