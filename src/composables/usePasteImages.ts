@@ -58,8 +58,16 @@ export function usePasteImages(onImages: (images: PastedImage[]) => void | Promi
       // Must run inside the paste gesture, while it still has user activation.
       try {
         images = await readClipboardImages();
-      } catch {
-        // Not allowed, or no image on the clipboard: leave the default paste alone.
+      } catch (error) {
+        // Expected when there is no image on the clipboard or permission is denied.
+        if (
+          !(
+            error instanceof DOMException &&
+            (error.name === "NotAllowedError" || error.name === "AbortError")
+          )
+        ) {
+          console.warn("Could not read an image from the clipboard", error);
+        }
         return;
       }
       if (images.length === 0) return;
